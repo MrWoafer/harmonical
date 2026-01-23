@@ -58,6 +58,55 @@ impl Ord for PerfectQuality {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum PitchClassIntervalNumber {
+    Unison,
+    Second,
+    Third,
+    Fourth,
+    Fifth,
+    Sixth,
+    Seventh,
+}
+
+impl PitchClassIntervalNumber {
+    pub fn zero_based(&self) -> usize {
+        match self {
+            PitchClassIntervalNumber::Unison => 0,
+            PitchClassIntervalNumber::Second => 1,
+            PitchClassIntervalNumber::Third => 2,
+            PitchClassIntervalNumber::Fourth => 3,
+            PitchClassIntervalNumber::Fifth => 4,
+            PitchClassIntervalNumber::Sixth => 5,
+            PitchClassIntervalNumber::Seventh => 6,
+        }
+    }
+
+    pub fn one_based(&self) -> usize {
+        self.zero_based() + 1
+    }
+
+    pub fn try_from_zero_based(number: usize) -> Result<Self, ()> {
+        match number {
+            0 => Ok(Self::Unison),
+            1 => Ok(Self::Second),
+            2 => Ok(Self::Third),
+            3 => Ok(Self::Fourth),
+            4 => Ok(Self::Fifth),
+            5 => Ok(Self::Sixth),
+            6 => Ok(Self::Seventh),
+            _ => Err(()),
+        }
+    }
+
+    pub fn try_from_one_based(number: usize) -> Result<Self, ()> {
+        match number {
+            0 => Err(()),
+            _ => Self::try_from_zero_based(number - 1),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum OrderedPitchClassInterval {
     Unison(PerfectQuality),
@@ -118,6 +167,126 @@ impl OrderedPitchClassInterval {
     make_ordered_pitch_class_interval_consts!(Perfect, Fifth);
     make_ordered_pitch_class_interval_consts!(MajorMinor, Sixth);
     make_ordered_pitch_class_interval_consts!(MajorMinor, Seventh);
+
+    pub fn interval_number(&self) -> PitchClassIntervalNumber {
+        match self {
+            OrderedPitchClassInterval::Unison(_) => PitchClassIntervalNumber::Unison,
+            OrderedPitchClassInterval::Second(_) => PitchClassIntervalNumber::Second,
+            OrderedPitchClassInterval::Third(_) => PitchClassIntervalNumber::Third,
+            OrderedPitchClassInterval::Fourth(_) => PitchClassIntervalNumber::Fourth,
+            OrderedPitchClassInterval::Fifth(_) => PitchClassIntervalNumber::Fifth,
+            OrderedPitchClassInterval::Sixth(_) => PitchClassIntervalNumber::Sixth,
+            OrderedPitchClassInterval::Seventh(_) => PitchClassIntervalNumber::Seventh,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PitchIntervalNumber {
+    pub octaves: usize,
+    pub pitch_class_interval_number: PitchClassIntervalNumber,
+}
+
+impl PitchIntervalNumber {
+    pub fn zero_based(&self) -> usize {
+        let Self {
+            octaves,
+            pitch_class_interval_number,
+        } = self;
+
+        octaves * 7 + pitch_class_interval_number.zero_based()
+    }
+
+    pub fn one_based(&self) -> usize {
+        self.zero_based() + 1
+    }
+
+    pub fn from_zero_based(number: usize) -> Self {
+        Self {
+            octaves: number / 7,
+            pitch_class_interval_number: PitchClassIntervalNumber::try_from_zero_based(number % 7)
+                .expect("number should be in valid range"),
+        }
+    }
+
+    pub fn try_from_one_based(number: usize) -> Result<Self, ()> {
+        match number {
+            0 => Err(()),
+            _ => Ok(Self::from_zero_based(number - 1)),
+        }
+    }
+}
+
+impl PitchIntervalNumber {
+    pub const UNISON: Self = Self {
+        octaves: 0,
+        pitch_class_interval_number: PitchClassIntervalNumber::Unison,
+    };
+
+    pub const SECOND: Self = Self {
+        octaves: 0,
+        pitch_class_interval_number: PitchClassIntervalNumber::Second,
+    };
+
+    pub const THIRD: Self = Self {
+        octaves: 0,
+        pitch_class_interval_number: PitchClassIntervalNumber::Third,
+    };
+
+    pub const FOURTH: Self = Self {
+        octaves: 0,
+        pitch_class_interval_number: PitchClassIntervalNumber::Fourth,
+    };
+
+    pub const FIFTH: Self = Self {
+        octaves: 0,
+        pitch_class_interval_number: PitchClassIntervalNumber::Fifth,
+    };
+
+    pub const SIXTH: Self = Self {
+        octaves: 0,
+        pitch_class_interval_number: PitchClassIntervalNumber::Sixth,
+    };
+
+    pub const SEVENTH: Self = Self {
+        octaves: 0,
+        pitch_class_interval_number: PitchClassIntervalNumber::Seventh,
+    };
+
+    pub const OCTAVE: Self = Self {
+        octaves: 1,
+        pitch_class_interval_number: PitchClassIntervalNumber::Unison,
+    };
+
+    pub const NINTH: Self = Self {
+        octaves: 1,
+        pitch_class_interval_number: PitchClassIntervalNumber::Second,
+    };
+
+    pub const TENTH: Self = Self {
+        octaves: 1,
+        pitch_class_interval_number: PitchClassIntervalNumber::Third,
+    };
+
+    pub const ELEVENTH: Self = Self {
+        octaves: 1,
+        pitch_class_interval_number: PitchClassIntervalNumber::Fourth,
+    };
+
+    pub const TWELFTH: Self = Self {
+        octaves: 1,
+        pitch_class_interval_number: PitchClassIntervalNumber::Fifth,
+    };
+
+    pub const THIRTEENTH: Self = Self {
+        octaves: 1,
+        pitch_class_interval_number: PitchClassIntervalNumber::Sixth,
+    };
+
+    pub const FOURTEENTH: Self = Self {
+        octaves: 1,
+        pitch_class_interval_number: PitchClassIntervalNumber::Seventh,
+    };
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -208,6 +377,18 @@ impl UnorderedPitchInterval {
         octaves: 1,
         ordered_pitch_class_interval: OrderedPitchClassInterval::PERFECT_UNISON,
     };
+
+    pub fn interval_number(&self) -> PitchIntervalNumber {
+        let Self {
+            octaves,
+            ordered_pitch_class_interval,
+        } = self;
+
+        PitchIntervalNumber {
+            octaves: *octaves,
+            pitch_class_interval_number: ordered_pitch_class_interval.interval_number(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -273,5 +454,43 @@ impl Neg for OrderedPitchInterval {
             direction: -direction,
             unordered,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pitch_interval_number_ordering() {
+        assert!(PitchIntervalNumber::UNISON < PitchIntervalNumber::SECOND);
+        assert!(PitchIntervalNumber::THIRD < PitchIntervalNumber::SEVENTH);
+        assert!(PitchIntervalNumber::UNISON < PitchIntervalNumber::OCTAVE);
+        assert!(PitchIntervalNumber::THIRD < PitchIntervalNumber::NINTH);
+    }
+
+    #[test]
+    fn pitch_interval_from_one_based() {
+        assert_eq!(PitchIntervalNumber::try_from_one_based(0), Err(()));
+
+        assert_eq!(
+            PitchIntervalNumber::try_from_one_based(1),
+            Ok(PitchIntervalNumber::UNISON)
+        );
+
+        assert_eq!(
+            PitchIntervalNumber::try_from_one_based(4),
+            Ok(PitchIntervalNumber::FOURTH)
+        );
+
+        assert_eq!(
+            PitchIntervalNumber::try_from_one_based(8),
+            Ok(PitchIntervalNumber::OCTAVE)
+        );
+
+        assert_eq!(
+            PitchIntervalNumber::try_from_one_based(13),
+            Ok(PitchIntervalNumber::THIRTEENTH)
+        );
     }
 }
