@@ -75,15 +75,6 @@ pub struct PitchClass {
     pub accidental: Accidental,
 }
 
-impl Display for PitchClass {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let Self { letter, accidental } = self;
-
-        letter.fmt(f)?;
-        accidental.fmt(f)
-    }
-}
-
 macro_rules! make_pitch_class_consts {
     ($letter:ident) => {
         paste! {
@@ -125,19 +116,19 @@ impl PitchClass {
     make_pitch_class_consts!(G);
 }
 
+impl Display for PitchClass {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self { letter, accidental } = self;
+
+        letter.fmt(f)?;
+        accidental.fmt(f)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Pitch {
     pub class: PitchClass,
     pub octave: isize,
-}
-
-impl Display for Pitch {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let Self { class, octave } = self;
-
-        class.fmt(f)?;
-        octave.fmt(f)
-    }
 }
 
 macro_rules! make_pitch_consts {
@@ -178,6 +169,15 @@ impl Pitch {
     make_pitch_consts!(E);
     make_pitch_consts!(F);
     make_pitch_consts!(G);
+}
+
+impl Display for Pitch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self { class, octave } = self;
+
+        class.fmt(f)?;
+        octave.fmt(f)
+    }
 }
 
 #[cfg(test)]
