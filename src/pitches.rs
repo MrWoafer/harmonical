@@ -125,18 +125,82 @@ impl PitchClass {
     make_pitch_class_consts!(G);
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Pitch {
+    pub class: PitchClass,
+    pub octave: isize,
+}
+
+impl Display for Pitch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self { class, octave } = self;
+
+        class.fmt(f)?;
+        octave.fmt(f)
+    }
+}
+
+macro_rules! make_pitch_consts {
+    ($letter:ident) => {
+        make_pitch_consts_specific_octave!($letter, 0);
+        make_pitch_consts_specific_octave!($letter, 1);
+        make_pitch_consts_specific_octave!($letter, 2);
+        make_pitch_consts_specific_octave!($letter, 3);
+        make_pitch_consts_specific_octave!($letter, 4);
+        make_pitch_consts_specific_octave!($letter, 5);
+        make_pitch_consts_specific_octave!($letter, 6);
+        make_pitch_consts_specific_octave!($letter, 7);
+        make_pitch_consts_specific_octave!($letter, 8);
+    };
+}
+
+macro_rules! make_pitch_consts_specific_octave {
+    ($letter:ident, $octave:literal) => {
+        paste! {
+            #[expect(non_upper_case_globals)]
+            pub const [<$letter x $octave>]: Self = Self { class: PitchClass::[<$letter x>], octave: $octave };
+            #[expect(non_upper_case_globals)]
+            pub const [<$letter s $octave>]: Self = Self { class: PitchClass::[<$letter s>], octave: $octave };
+            pub const [<$letter $octave>]: Self = Self { class: PitchClass::$letter, octave: $octave };
+            #[expect(non_upper_case_globals)]
+            pub const [<$letter b $octave>]: Self = Self { class: PitchClass::[<$letter b>], octave: $octave };
+            #[expect(non_upper_case_globals)]
+            pub const [<$letter bb $octave>]: Self = Self { class: PitchClass::[<$letter bb>], octave: $octave };
+        }
+    };
+}
+
+impl Pitch {
+    make_pitch_consts!(A);
+    make_pitch_consts!(B);
+    make_pitch_consts!(C);
+    make_pitch_consts!(D);
+    make_pitch_consts!(E);
+    make_pitch_consts!(F);
+    make_pitch_consts!(G);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn note_display() {
-        assert_eq!(Note::A.to_string(), "A");
-        assert_eq!(format!("{:#}", Note::B), "B♮");
-        assert_eq!(Note::Cs.to_string(), "C#");
-        assert_eq!(Note::Dx.to_string(), "Dx");
-        assert_eq!(Note::Eb.to_string(), "Eb");
-        assert_eq!(Note::Fbb.to_string(), "Fbb");
-        assert_eq!(Note::G.to_string(), "G");
+    fn pitch_display() {
+        assert_eq!(Pitch::A0.to_string(), "A0");
+        assert_eq!(format!("{:#}", Pitch::B1), "B♮1");
+        assert_eq!(Pitch::Cs3.to_string(), "C#3");
+        assert_eq!(Pitch::Dx4.to_string(), "Dx4");
+        assert_eq!(Pitch::Eb5.to_string(), "Eb5");
+        assert_eq!(Pitch::Fbb6.to_string(), "Fbb6");
+        assert_eq!(Pitch::G7.to_string(), "G7");
+
+        assert_eq!(
+            Pitch {
+                octave: -2,
+                class: PitchClass::Cs
+            }
+            .to_string(),
+            "C#-2"
+        );
     }
 }
