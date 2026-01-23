@@ -48,6 +48,53 @@ pub enum Accidental {
     DoubleFlat,
 }
 
+impl Accidental {
+    fn index(&self) -> isize {
+        match self {
+            Self::DoubleSharp => 2,
+            Self::Sharp => 1,
+            Self::Natural => 0,
+            Self::Flat => -1,
+            Self::DoubleFlat => -2,
+        }
+    }
+
+    fn try_from_index(index: isize) -> Result<Self, ()> {
+        match index {
+            2 => Ok(Self::DoubleSharp),
+            1 => Ok(Self::Sharp),
+            0 => Ok(Self::Natural),
+            -1 => Ok(Self::Flat),
+            -2 => Ok(Self::DoubleFlat),
+            _ => Err(()),
+        }
+    }
+
+    pub fn try_sharpen(self) -> Result<Self, ()> {
+        Self::try_from_index(self.index() + 1)
+    }
+
+    #[track_caller]
+    pub fn sharpen(self) -> Self {
+        self.try_sharpen().expect(&format!(
+            "cannot sharpen {:?} as it cannot be represented by the type",
+            self
+        ))
+    }
+
+    pub fn try_flatten(self) -> Result<Self, ()> {
+        Self::try_from_index(self.index() - 1)
+    }
+
+    #[track_caller]
+    pub fn flatten(self) -> Self {
+        self.try_flatten().expect(&format!(
+            "cannot flatten {:?} as it cannot be represented by the type",
+            self
+        ))
+    }
+}
+
 impl Display for Accidental {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -114,6 +161,42 @@ impl PitchClass {
     make_pitch_class_consts!(E);
     make_pitch_class_consts!(F);
     make_pitch_class_consts!(G);
+
+    pub fn try_sharpen(self) -> Result<Self, ()> {
+        let Self { letter, accidental } = self;
+
+        accidental
+            .try_sharpen()
+            .map(|accidental| Self { letter, accidental })
+    }
+
+    #[track_caller]
+    pub fn sharpen(self) -> Self {
+        let Self { letter, accidental } = self;
+
+        Self {
+            letter,
+            accidental: accidental.sharpen(),
+        }
+    }
+
+    pub fn try_flatten(self) -> Result<Self, ()> {
+        let Self { letter, accidental } = self;
+
+        accidental
+            .try_flatten()
+            .map(|accidental| Self { letter, accidental })
+    }
+
+    #[track_caller]
+    pub fn flatten(self) -> Self {
+        let Self { letter, accidental } = self;
+
+        Self {
+            letter,
+            accidental: accidental.flatten(),
+        }
+    }
 }
 
 impl Display for PitchClass {
@@ -169,6 +252,38 @@ impl Pitch {
     make_pitch_consts!(E);
     make_pitch_consts!(F);
     make_pitch_consts!(G);
+
+    pub fn try_sharpen(self) -> Result<Self, ()> {
+        let Self { class, octave } = self;
+
+        class.try_sharpen().map(|class| Self { class, octave })
+    }
+
+    #[track_caller]
+    pub fn sharpen(self) -> Self {
+        let Self { class, octave } = self;
+
+        Self {
+            class: class.sharpen(),
+            octave,
+        }
+    }
+
+    pub fn try_flatten(self) -> Result<Self, ()> {
+        let Self { class, octave } = self;
+
+        class.try_flatten().map(|class| Self { class, octave })
+    }
+
+    #[track_caller]
+    pub fn flatten(self) -> Self {
+        let Self { class, octave } = self;
+
+        Self {
+            class: class.flatten(),
+            octave,
+        }
+    }
 }
 
 impl Display for Pitch {
@@ -202,5 +317,26 @@ mod tests {
             .to_string(),
             "C#-2"
         );
+    }
+
+    #[test]
+    fn sharpen_pitch() {
+        assert_eq!(Pitch::As3.sharpen(), Pitch::Ax3);
+        assert_eq!(Pitch::B2.sharpen(), Pitch::Bs2);
+        assert_eq!(Pitch::Cb1.sharpen(), Pitch::C1);
+        assert_eq!(Pitch::Dbb0.sharpen(), Pitch::Db0);
+
+        assert_eq!(Pitch::Ex5.try_sharpen(), Err(()));
+    }
+
+    #[test]
+    fn flatten_pitch() {
+        assert_eq!(Pitch::Ex8.flatten(), Pitch::Es8);
+        assert_eq!(Pitch::Fs7.flatten(), Pitch::F7);
+        assert_eq!(Pitch::G6.flatten(), Pitch::Gb6);
+        assert_eq!(Pitch::Ab5.flatten(), Pitch::Abb5);
+        assert_eq!(Pitch::C0.flatten(), Pitch::Cb0);
+
+        assert_eq!(Pitch::Bbb2.try_flatten(), Err(()));
     }
 }
