@@ -454,33 +454,6 @@ pub struct UnorderedPitchIntervalNumber {
 }
 
 impl UnorderedPitchIntervalNumber {
-    pub fn zero_based(&self) -> usize {
-        let Self { octaves, simple } = self;
-
-        octaves * 7 + simple.zero_based()
-    }
-
-    pub fn one_based(&self) -> usize {
-        self.zero_based() + 1
-    }
-
-    pub fn from_zero_based(number: usize) -> Self {
-        Self {
-            octaves: number / 7,
-            simple: UnorderedSimplePitchIntervalNumber::try_from_zero_based(number % 7)
-                .expect("number should be in valid range"),
-        }
-    }
-
-    pub fn try_from_one_based(number: usize) -> Result<Self, ()> {
-        match number {
-            0 => Err(()),
-            _ => Ok(Self::from_zero_based(number - 1)),
-        }
-    }
-}
-
-impl UnorderedPitchIntervalNumber {
     pub const UNISON: Self = Self {
         octaves: 0,
         simple: UnorderedSimplePitchIntervalNumber::Unison,
@@ -555,6 +528,31 @@ impl UnorderedPitchIntervalNumber {
         octaves: 2,
         simple: UnorderedSimplePitchIntervalNumber::Unison,
     };
+
+    pub fn zero_based(&self) -> usize {
+        let Self { octaves, simple } = self;
+
+        octaves * 7 + simple.zero_based()
+    }
+
+    pub fn one_based(&self) -> usize {
+        self.zero_based() + 1
+    }
+
+    pub fn from_zero_based(number: usize) -> Self {
+        Self {
+            octaves: number / 7,
+            simple: UnorderedSimplePitchIntervalNumber::try_from_zero_based(number % 7)
+                .expect("number should be in valid range"),
+        }
+    }
+
+    pub fn try_from_one_based(number: usize) -> Result<Self, ()> {
+        match number {
+            0 => Err(()),
+            _ => Ok(Self::from_zero_based(number - 1)),
+        }
+    }
 }
 
 impl From<UnorderedSimplePitchIntervalNumber> for UnorderedPitchIntervalNumber {
