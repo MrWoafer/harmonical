@@ -19,7 +19,7 @@ pub enum Letter {
 }
 
 impl Letter {
-    pub fn index_in_octave(&self) -> usize {
+    pub const fn index_in_octave(&self) -> usize {
         match self {
             Self::C => 0,
             Self::D => 1,

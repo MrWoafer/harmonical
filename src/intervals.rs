@@ -33,7 +33,7 @@ impl MajorMinorQuality {
         }
     }
 
-    pub fn invert(self) -> Self {
+    pub const fn invert(self) -> Self {
         match self {
             Self::Augmented(times) => Self::Diminished(times),
             Self::Major => Self::Minor,
@@ -81,7 +81,7 @@ impl PerfectQuality {
         }
     }
 
-    pub fn invert(self) -> Self {
+    pub const fn invert(self) -> Self {
         match self {
             Self::Augmented(times) => Self::Diminished(times),
             Self::Perfect => Self::Perfect,
@@ -220,7 +220,7 @@ impl OrderedPitchClassInterval {
     pub const DOUBLY_DIMINISHED_OCTAVE: Self =
         Self::DiminishedOctave(NonZeroUsize::new(2).unwrap());
 
-    pub fn interval_number(&self) -> PitchClassIntervalNumber {
+    pub const fn interval_number(&self) -> PitchClassIntervalNumber {
         match self {
             Self::Unison(_) => PitchClassIntervalNumber::Unison,
             Self::Second(_) => PitchClassIntervalNumber::Second,
@@ -344,7 +344,7 @@ impl UnorderedSimplePitchInterval {
     make_unordered_simple_pitch_interval_consts!(MajorMinor, Sixth);
     make_unordered_simple_pitch_interval_consts!(MajorMinor, Seventh);
 
-    pub fn interval_number(&self) -> UnorderedSimplePitchIntervalNumber {
+    pub const fn interval_number(&self) -> UnorderedSimplePitchIntervalNumber {
         match self {
             Self::Unison(_) => UnorderedSimplePitchIntervalNumber::Unison,
             Self::Second(_) => UnorderedSimplePitchIntervalNumber::Second,
@@ -594,7 +594,7 @@ impl UnorderedPitchInterval {
         simple: UnorderedSimplePitchInterval::PERFECT_UNISON,
     };
 
-    pub fn interval_number(&self) -> UnorderedPitchIntervalNumber {
+    pub const fn interval_number(&self) -> UnorderedPitchIntervalNumber {
         let Self { octaves, simple } = self;
 
         UnorderedPitchIntervalNumber {
