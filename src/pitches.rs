@@ -1,16 +1,35 @@
-use std::fmt::Display;
+use std::{fmt::Display, num::NonZeroUsize, ops::Sub};
 
 use paste::paste;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+use crate::intervals::{
+    IntervalDirection, MajorMinorQuality, OrderedPitchClassInterval, OrderedPitchInterval,
+    PerfectQuality, PitchClassIntervalNumber, UnorderedPitchInterval, UnorderedSimplePitchInterval,
+};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Letter {
-    A,
-    B,
     C,
     D,
     E,
     F,
     G,
+    A,
+    B,
+}
+
+impl Letter {
+    pub fn index_in_octave(&self) -> usize {
+        match self {
+            Self::C => 0,
+            Self::D => 1,
+            Self::E => 2,
+            Self::F => 3,
+            Self::G => 4,
+            Self::A => 5,
+            Self::B => 6,
+        }
+    }
 }
 
 impl Display for Letter {
@@ -20,14 +39,14 @@ impl Display for Letter {
 }
 
 impl From<Letter> for char {
-    fn from(value: Letter) -> Self {
-        Self::from(&value)
+    fn from(letter: Letter) -> Self {
+        Self::from(&letter)
     }
 }
 
 impl From<&Letter> for char {
-    fn from(value: &Letter) -> Self {
-        match value {
+    fn from(letter: &Letter) -> Self {
+        match letter {
             Letter::A => 'A',
             Letter::B => 'B',
             Letter::C => 'C',
@@ -39,13 +58,28 @@ impl From<&Letter> for char {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+impl Sub for Letter {
+    type Output = PitchClassIntervalNumber;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let interval_number = if self.index_in_octave() >= rhs.index_in_octave() {
+            self.index_in_octave() - rhs.index_in_octave()
+        } else {
+            self.index_in_octave() + 7 - rhs.index_in_octave()
+        };
+
+        PitchClassIntervalNumber::try_from_zero_based(interval_number)
+            .expect("number should be in valid range")
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Accidental {
-    DoubleSharp,
-    Sharp,
-    Natural,
-    Flat,
     DoubleFlat,
+    Flat,
+    Natural,
+    Sharp,
+    DoubleSharp,
 }
 
 impl Accidental {
@@ -116,7 +150,7 @@ impl Display for Accidental {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PitchClass {
     pub letter: Letter,
     pub accidental: Accidental,
@@ -197,6 +231,21 @@ impl PitchClass {
             accidental: accidental.flatten(),
         }
     }
+
+    fn pitch_class_number(&self) -> usize {
+        let Self { letter, accidental } = self;
+
+        (match letter {
+            Letter::C => 0,
+            Letter::D => 2,
+            Letter::E => 4,
+            Letter::F => 5,
+            Letter::G => 7,
+            Letter::A => 9,
+            Letter::B => 11,
+        } + accidental.index())
+        .rem_euclid(12) as usize
+    }
 }
 
 impl Display for PitchClass {
@@ -207,11 +256,61 @@ impl Display for PitchClass {
         accidental.fmt(f)
     }
 }
+impl Sub for PitchClass {
+    type Output = OrderedPitchClassInterval;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    fn sub(self, rhs: Self) -> Self::Output {
+        let interval_number = if self.letter == rhs.letter && self.accidental < rhs.accidental {
+            PitchClassIntervalNumber::Octave
+        } else {
+            self.letter - rhs.letter
+        };
+
+        let pitch_class_number_difference = if self.pitch_class_number() >= rhs.pitch_class_number()
+        {
+            self.pitch_class_number() - rhs.pitch_class_number()
+        } else {
+            self.pitch_class_number() + 12 - rhs.pitch_class_number()
+        } as isize;
+
+        match interval_number {
+            PitchClassIntervalNumber::Unison => OrderedPitchClassInterval::Unison(
+                PerfectQuality::from_index(pitch_class_number_difference),
+            ),
+            PitchClassIntervalNumber::Second => OrderedPitchClassInterval::Second(
+                MajorMinorQuality::from_index(pitch_class_number_difference - 1),
+            ),
+            PitchClassIntervalNumber::Third => OrderedPitchClassInterval::Third(
+                MajorMinorQuality::from_index(pitch_class_number_difference - 3),
+            ),
+            PitchClassIntervalNumber::Fourth => OrderedPitchClassInterval::Fourth(
+                PerfectQuality::from_index(pitch_class_number_difference - 5),
+            ),
+            PitchClassIntervalNumber::Fifth => OrderedPitchClassInterval::Fifth(
+                PerfectQuality::from_index(pitch_class_number_difference - 7),
+            ),
+            PitchClassIntervalNumber::Sixth => OrderedPitchClassInterval::Sixth(
+                MajorMinorQuality::from_index(pitch_class_number_difference - 8),
+            ),
+            PitchClassIntervalNumber::Seventh => OrderedPitchClassInterval::Seventh(
+                MajorMinorQuality::from_index(pitch_class_number_difference - 10),
+            ),
+            PitchClassIntervalNumber::Octave => OrderedPitchClassInterval::DiminishedOctave(
+                NonZeroUsize::new(
+                    12_usize
+                        .checked_sub(pitch_class_number_difference as usize)
+                        .expect("pitch class number difference should be <= 11"),
+                )
+                .expect("pitch class number difference should be <= 11"),
+            ),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Pitch {
-    pub class: PitchClass,
     pub octave: isize,
+    pub class: PitchClass,
 }
 
 macro_rules! make_pitch_consts {
@@ -284,6 +383,20 @@ impl Pitch {
             octave,
         }
     }
+
+    fn pitch_number(&self) -> isize {
+        self.octave * 12
+            + match self.class.letter {
+                Letter::C => 0,
+                Letter::D => 2,
+                Letter::E => 4,
+                Letter::F => 5,
+                Letter::G => 7,
+                Letter::A => 9,
+                Letter::B => 11,
+            }
+            + self.class.accidental.index()
+    }
 }
 
 impl Display for Pitch {
@@ -295,8 +408,65 @@ impl Display for Pitch {
     }
 }
 
+impl Sub for Pitch {
+    type Output = OrderedPitchInterval;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let direction = match self.cmp(&rhs) {
+            std::cmp::Ordering::Less => IntervalDirection::Descending,
+            std::cmp::Ordering::Equal | std::cmp::Ordering::Greater => IntervalDirection::Ascending,
+        };
+
+        let pitch_number = self.pitch_number();
+        let rhs_pitch_number = rhs.pitch_number();
+
+        let octaves = pitch_number.abs_diff(rhs_pitch_number) / 12;
+
+        let pitch_class_interval = match direction {
+            IntervalDirection::Ascending => self.class - rhs.class,
+            IntervalDirection::Descending => rhs.class - self.class,
+        };
+
+        let simple = match pitch_class_interval {
+            OrderedPitchClassInterval::Unison(quality) => {
+                UnorderedSimplePitchInterval::Unison(quality)
+            }
+            OrderedPitchClassInterval::Second(quality) => {
+                UnorderedSimplePitchInterval::Second(quality)
+            }
+            OrderedPitchClassInterval::Third(quality) => {
+                UnorderedSimplePitchInterval::Third(quality)
+            }
+            OrderedPitchClassInterval::Fourth(quality) => {
+                UnorderedSimplePitchInterval::Fourth(quality)
+            }
+            OrderedPitchClassInterval::Fifth(quality) => {
+                UnorderedSimplePitchInterval::Fifth(quality)
+            }
+            OrderedPitchClassInterval::Sixth(quality) => {
+                UnorderedSimplePitchInterval::Sixth(quality)
+            }
+            OrderedPitchClassInterval::Seventh(quality) => {
+                UnorderedSimplePitchInterval::Seventh(quality)
+            }
+            OrderedPitchClassInterval::DiminishedOctave(times) => {
+                UnorderedSimplePitchInterval::Unison(PerfectQuality::Diminished(times))
+            }
+        };
+
+        OrderedPitchInterval {
+            direction,
+            unordered: UnorderedPitchInterval { octaves, simple },
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroUsize;
+
+    use quickcheck_macros::quickcheck;
+
     use super::*;
 
     #[test]
@@ -338,5 +508,167 @@ mod tests {
         assert_eq!(Pitch::C0.flatten(), Pitch::Cb0);
 
         assert_eq!(Pitch::Bbb2.try_flatten(), Err(()));
+    }
+
+    #[test]
+    fn pitch_class_sub_examples() {
+        assert_eq!(
+            PitchClass::A - PitchClass::A,
+            OrderedPitchClassInterval::PERFECT_UNISON
+        );
+
+        assert_eq!(
+            PitchClass::B - PitchClass::A,
+            OrderedPitchClassInterval::MAJOR_SECOND
+        );
+
+        assert_eq!(
+            PitchClass::F - PitchClass::E,
+            OrderedPitchClassInterval::MINOR_SECOND
+        );
+
+        assert_eq!(
+            PitchClass::E - PitchClass::F,
+            OrderedPitchClassInterval::MAJOR_SEVENTH
+        );
+
+        assert_eq!(
+            PitchClass::G - PitchClass::D,
+            OrderedPitchClassInterval::PERFECT_FOURTH
+        );
+
+        assert_eq!(
+            PitchClass::Ab - PitchClass::E,
+            OrderedPitchClassInterval::DIMINISHED_FOURTH
+        );
+
+        assert_eq!(
+            PitchClass::Gs - PitchClass::Gb,
+            OrderedPitchClassInterval::DOUBLY_AUGMENTED_UNISON
+        );
+
+        assert_eq!(
+            PitchClass::Cbb - PitchClass::Cx,
+            OrderedPitchClassInterval::DiminishedOctave(NonZeroUsize::new(4).unwrap())
+        );
+    }
+
+    #[quickcheck]
+    fn pitch_class_sub_sharpen_invariant(a: PitchClass, b: PitchClass) {
+        if let Ok(a_sharpened) = a.try_sharpen()
+            && let Ok(b_sharpened) = b.try_sharpen()
+        {
+            assert_eq!(a - b, a_sharpened - b_sharpened)
+        }
+    }
+
+    #[quickcheck]
+    fn pitch_class_sub_flatten_invariant(a: PitchClass, b: PitchClass) {
+        if let Ok(a_flattened) = a.try_flatten()
+            && let Ok(b_flattened) = b.try_flatten()
+        {
+            assert_eq!(a - b, a_flattened - b_flattened)
+        }
+    }
+
+    #[test]
+    fn pitch_sub_examples() {
+        assert_eq!(
+            Pitch::A4 - Pitch::A4,
+            UnorderedPitchInterval::PERFECT_UNISON.ascending()
+        );
+
+        assert_eq!(
+            Pitch::A4 - Pitch::A4,
+            UnorderedPitchInterval::PERFECT_UNISON.descending()
+        );
+
+        assert_eq!(
+            Pitch::B3 - Pitch::A3,
+            UnorderedPitchInterval::MAJOR_SECOND.ascending()
+        );
+
+        assert_eq!(
+            Pitch::F2 - Pitch::E2,
+            UnorderedPitchInterval::MINOR_SECOND.ascending()
+        );
+
+        assert_eq!(
+            Pitch::E5 - Pitch::F4,
+            UnorderedPitchInterval::MAJOR_SEVENTH.ascending()
+        );
+
+        assert_eq!(
+            Pitch::G1 - Pitch::D1,
+            UnorderedPitchInterval::PERFECT_FOURTH.ascending()
+        );
+
+        assert_eq!(
+            Pitch::Ab6 - Pitch::E6,
+            UnorderedPitchInterval::DIMINISHED_FOURTH.ascending()
+        );
+
+        assert_eq!(
+            Pitch::Gs7 - Pitch::Gb7,
+            UnorderedPitchInterval::DOUBLY_AUGMENTED_UNISON.ascending()
+        );
+
+        assert_eq!(
+            Pitch::Cbb4 - Pitch::Cx4,
+            UnorderedPitchInterval::from(UnorderedSimplePitchInterval::Unison(
+                PerfectQuality::Augmented(NonZeroUsize::new(4).unwrap())
+            ))
+            .descending()
+        );
+
+        assert_eq!(
+            Pitch::Cbb5 - Pitch::Cx4,
+            UnorderedPitchInterval {
+                octaves: 0,
+                simple: UnorderedSimplePitchInterval::Unison(PerfectQuality::Diminished(
+                    NonZeroUsize::new(4).unwrap()
+                ))
+            }
+            .ascending()
+        );
+
+        assert_eq!(
+            Pitch::Fx5 - Pitch::Fbb4,
+            UnorderedPitchInterval {
+                octaves: 1,
+                simple: UnorderedSimplePitchInterval::Unison(PerfectQuality::Augmented(
+                    NonZeroUsize::new(4).unwrap()
+                ))
+            }
+            .ascending()
+        );
+
+        assert_eq!(
+            Pitch::Es5 - Pitch::As4,
+            UnorderedPitchInterval::PERFECT_FIFTH.ascending()
+        );
+
+        assert_eq!(
+            Pitch::Es5 - Pitch::As3,
+            UnorderedPitchInterval::PERFECT_TWELFTH.ascending()
+        );
+    }
+
+    #[quickcheck]
+    fn pitch_sub_sharpen_invariant(a: Pitch, b: Pitch) {
+        if let Ok(a_sharpened) = a.try_sharpen()
+            && let Ok(b_sharpened) = b.try_sharpen()
+        {
+            assert_eq!(a - b, a_sharpened - b_sharpened);
+        }
+    }
+
+    #[quickcheck]
+    fn pitch_sub_flatten_invariant(a: Pitch, b: Pitch) {
+        if let Ok(a_flattened) = a.try_flatten()
+            && let Ok(b_flattened) = b.try_flatten()
+        {
+            assert_eq!(a - b, a_flattened - b_flattened);
+        }
     }
 }
