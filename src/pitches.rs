@@ -384,6 +384,24 @@ impl Pitch {
         }
     }
 
+    pub const fn octave_up(self) -> Self {
+        let Self { octave, class } = self;
+
+        Self {
+            octave: octave + 1,
+            class,
+        }
+    }
+
+    pub const fn octave_down(self) -> Self {
+        let Self { octave, class } = self;
+
+        Self {
+            octave: octave - 1,
+            class,
+        }
+    }
+
     fn pitch_number(&self) -> isize {
         self.octave * 12
             + match self.class.letter {
@@ -670,5 +688,10 @@ mod tests {
         {
             assert_eq!(a - b, a_flattened - b_flattened);
         }
+    }
+
+    #[quickcheck]
+    fn pitch_sub_octave_invariant(a: Pitch, b: Pitch) {
+        assert_eq!(a - b, a.octave_up() - b.octave_up());
     }
 }
