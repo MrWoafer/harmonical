@@ -41,6 +41,40 @@ impl MajorMinorQuality {
             Self::Diminished(times) => Self::Augmented(times),
         }
     }
+
+    pub const fn augment(self) -> Self {
+        match self {
+            Self::Augmented(times) => Self::Augmented(times.checked_add(1).expect(
+                "realistically something shouldn't be augmented enough times for an overflow to \
+                occur",
+            )),
+            Self::Major => Self::Augmented(NonZeroUsize::new(1).unwrap()),
+            Self::Minor => Self::Major,
+            Self::Diminished(times) => match times.get() {
+                0 => unreachable!(),
+                1 => Self::Minor,
+                times => {
+                    Self::Diminished(NonZeroUsize::new(times - 1).expect("should be non-zero"))
+                }
+            },
+        }
+    }
+
+    pub const fn diminish(self) -> Self {
+        match self {
+            Self::Augmented(times) => match times.get() {
+                0 => unreachable!(),
+                1 => Self::Major,
+                times => Self::Augmented(NonZeroUsize::new(times - 1).expect("should be non-zero")),
+            },
+            Self::Major => Self::Minor,
+            Self::Minor => Self::Diminished(NonZeroUsize::new(1).unwrap()),
+            Self::Diminished(times) => Self::Diminished(times.checked_add(1).expect(
+                "realistically something shouldn't be diminished enough times for an overflow to \
+                occur",
+            )),
+        }
+    }
 }
 
 impl PartialOrd for MajorMinorQuality {
@@ -86,6 +120,38 @@ impl PerfectQuality {
             Self::Augmented(times) => Self::Diminished(times),
             Self::Perfect => Self::Perfect,
             Self::Diminished(times) => Self::Augmented(times),
+        }
+    }
+
+    pub const fn augment(self) -> Self {
+        match self {
+            Self::Perfect => Self::Augmented(NonZeroUsize::new(1).unwrap()),
+            Self::Augmented(times) => Self::Augmented(times.checked_add(1).expect(
+                "realistically something shouldn't be augmented enough times for an overflow to \
+                occur",
+            )),
+            Self::Diminished(times) => match times.get() {
+                0 => unreachable!(),
+                1 => Self::Perfect,
+                times => {
+                    Self::Diminished(NonZeroUsize::new(times - 1).expect("should be non-zero"))
+                }
+            },
+        }
+    }
+
+    pub const fn diminish(self) -> Self {
+        match self {
+            Self::Augmented(times) => match times.get() {
+                0 => unreachable!(),
+                1 => Self::Perfect,
+                times => Self::Augmented(NonZeroUsize::new(times - 1).expect("should be non-zero")),
+            },
+            Self::Perfect => Self::Diminished(NonZeroUsize::new(1).unwrap()),
+            Self::Diminished(times) => Self::Diminished(times.checked_add(1).expect(
+                "realistically something shouldn't be diminished enough times for an overflow to \
+                occur",
+            )),
         }
     }
 }
@@ -355,6 +421,30 @@ impl UnorderedSimplePitchInterval {
             Self::Seventh(_) => UnorderedSimplePitchIntervalNumber::Seventh,
         }
     }
+
+    pub const fn augment(self) -> Self {
+        match self {
+            Self::Unison(quality) => Self::Unison(quality.augment()),
+            Self::Second(quality) => Self::Second(quality.augment()),
+            Self::Third(quality) => Self::Third(quality.augment()),
+            Self::Fourth(quality) => Self::Fourth(quality.augment()),
+            Self::Fifth(quality) => Self::Fifth(quality.augment()),
+            Self::Sixth(quality) => Self::Sixth(quality.augment()),
+            Self::Seventh(quality) => Self::Seventh(quality.augment()),
+        }
+    }
+
+    pub const fn diminish(self) -> Self {
+        match self {
+            Self::Unison(quality) => Self::Unison(quality.diminish()),
+            Self::Second(quality) => Self::Second(quality.diminish()),
+            Self::Third(quality) => Self::Third(quality.diminish()),
+            Self::Fourth(quality) => Self::Fourth(quality.diminish()),
+            Self::Fifth(quality) => Self::Fifth(quality.diminish()),
+            Self::Sixth(quality) => Self::Sixth(quality.diminish()),
+            Self::Seventh(quality) => Self::Seventh(quality.diminish()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -616,6 +706,24 @@ impl UnorderedPitchInterval {
             unordered: self,
         }
     }
+
+    pub const fn augment(self) -> Self {
+        let Self { octaves, simple } = self;
+
+        Self {
+            octaves,
+            simple: simple.augment(),
+        }
+    }
+
+    pub const fn diminish(self) -> Self {
+        let Self { octaves, simple } = self;
+
+        Self {
+            octaves,
+            simple: simple.diminish(),
+        }
+    }
 }
 
 impl From<UnorderedSimplePitchInterval> for UnorderedPitchInterval {
@@ -645,6 +753,32 @@ impl Neg for IntervalDirection {
 pub struct OrderedPitchInterval {
     pub direction: IntervalDirection,
     pub unordered: UnorderedPitchInterval,
+}
+
+impl OrderedPitchInterval {
+    pub const fn augment(self) -> Self {
+        let Self {
+            direction,
+            unordered,
+        } = self;
+
+        Self {
+            direction,
+            unordered: unordered.augment(),
+        }
+    }
+
+    pub const fn diminish(self) -> Self {
+        let Self {
+            direction,
+            unordered,
+        } = self;
+
+        Self {
+            direction,
+            unordered: unordered.diminish(),
+        }
+    }
 }
 
 impl PartialEq for OrderedPitchInterval {
