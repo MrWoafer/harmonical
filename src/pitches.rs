@@ -421,8 +421,13 @@ impl Pitch {
     }
 
     fn pitch_number(&self) -> isize {
-        self.octave * 12
-            + match self.class.letter {
+        let Self {
+            octave,
+            class: PitchClass { letter, accidental },
+        } = self;
+
+        octave * 12
+            + match letter {
                 Letter::C => 0,
                 Letter::D => 2,
                 Letter::E => 4,
@@ -431,7 +436,7 @@ impl Pitch {
                 Letter::A => 9,
                 Letter::B => 11,
             }
-            + self.class.accidental.index()
+            + accidental.index()
     }
 }
 
