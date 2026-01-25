@@ -21,6 +21,8 @@ macro_rules! assert_enharmonic {
     };
 }
 
+pub use assert_enharmonic;
+
 #[macro_export]
 macro_rules! assert_not_enharmonic {
     ($left:expr, $right:expr $(,)?) => {
@@ -39,6 +41,8 @@ macro_rules! assert_not_enharmonic {
         )
     };
 }
+
+pub use assert_not_enharmonic;
 
 #[cfg(test)]
 mod tests {

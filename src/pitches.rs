@@ -501,7 +501,7 @@ mod tests {
 
     use quickcheck_macros::quickcheck;
 
-    use crate::{assert_enharmonic, assert_not_enharmonic};
+    use crate::enharmonic::{assert_enharmonic, assert_not_enharmonic};
 
     use super::*;
 

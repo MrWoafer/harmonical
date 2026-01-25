@@ -1282,7 +1282,10 @@ impl Display for OrderedPitchInterval {
 mod tests {
     use quickcheck_macros::quickcheck;
 
-    use crate::{assert_enharmonic, assert_not_enharmonic, pitches::Pitch};
+    use crate::{
+        enharmonic::{assert_enharmonic, assert_not_enharmonic},
+        pitches::Pitch,
+    };
 
     use super::*;
 
