@@ -130,7 +130,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn hz() {
+    fn tet12_hz() {
         assert_eq!(TET12::A440.hz(&Pitch::A4), 440.0);
         assert_eq!(TET12::A440.hz(&Pitch::A5), 880.0);
         assert_eq!(TET12::A440.hz(&Pitch::A3), 220.0);
@@ -154,7 +154,7 @@ mod tests {
     }
 
     #[quickcheck]
-    fn hz_octave_up_doubles(pitch: Pitch) {
+    fn tet12_octave_up_doubles_hz_examples(pitch: Pitch) {
         assert_abs_diff_eq!(
             TET12::A440.hz(&pitch.octave_up()),
             TET12::A440.hz(&pitch) * 2.0,
@@ -163,7 +163,7 @@ mod tests {
     }
 
     #[quickcheck]
-    fn hz_octave_up_halves(pitch: Pitch) {
+    fn tet12_octave_up_halves_hz(pitch: Pitch) {
         assert_abs_diff_eq!(
             TET12::A440.hz(&pitch.octave_down()),
             TET12::A440.hz(&pitch) / 2.0,
@@ -172,7 +172,7 @@ mod tests {
     }
 
     #[quickcheck]
-    fn enharmonic_pitches_have_same_hz(a: Pitch, b: Pitch) {
+    fn tet12_enharmonic_pitches_have_same_hz(a: Pitch, b: Pitch) {
         if a.enharmonic(&b) {
             assert_abs_diff_eq!(TET12::A440.hz(&a), TET12::A440.hz(&b), epsilon = 0.001);
         }

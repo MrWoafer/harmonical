@@ -1259,7 +1259,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn pitch_interval_number_ordering() {
+    fn pitch_interval_number_ordering_examples() {
         assert!(UnorderedPitchIntervalNumber::UNISON < UnorderedPitchIntervalNumber::SECOND);
         assert!(UnorderedPitchIntervalNumber::THIRD < UnorderedPitchIntervalNumber::SEVENTH);
         assert!(UnorderedPitchIntervalNumber::UNISON < UnorderedPitchIntervalNumber::OCTAVE);
@@ -1267,7 +1267,7 @@ mod tests {
     }
 
     #[test]
-    fn pitch_interval_from_one_based() {
+    fn pitch_interval_from_one_based_examples() {
         assert_eq!(UnorderedPitchIntervalNumber::try_from_one_based(0), Err(()));
 
         assert_eq!(
@@ -1292,7 +1292,7 @@ mod tests {
     }
 
     #[test]
-    fn ordered_pitch_interval_unison_equality() {
+    fn ordered_pitch_interval_unison_equality_examples() {
         assert_eq!(
             UnorderedPitchInterval::PERFECT_UNISON.ascending(),
             UnorderedPitchInterval::PERFECT_UNISON.ascending()
@@ -1329,7 +1329,7 @@ mod tests {
     }
 
     #[test]
-    fn ordered_pitch_interval_ordering() {
+    fn ordered_pitch_interval_ordering_examples() {
         assert_eq!(
             UnorderedPitchInterval::PERFECT_UNISON
                 .ascending()
@@ -1421,7 +1421,7 @@ mod tests {
     }
 
     #[test]
-    fn ordered_pitch_interval_display() {
+    fn ordered_pitch_interval_display_examples() {
         assert_eq!(
             format!("{}", UnorderedPitchInterval::PERFECT_UNISON.ascending()),
             "P1"

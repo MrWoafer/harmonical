@@ -506,7 +506,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn pitch_display() {
+    fn pitch_display_examples() {
         assert_eq!(Pitch::A0.to_string(), "A0");
         assert_eq!(format!("{:#}", Pitch::B1), "B♮1");
         assert_eq!(Pitch::Cs3.to_string(), "C#3");
@@ -526,7 +526,7 @@ mod tests {
     }
 
     #[test]
-    fn sharpen_pitch() {
+    fn sharpen_pitch_examples() {
         assert_eq!(Pitch::As3.sharpen(), Pitch::Ax3);
         assert_eq!(Pitch::B2.sharpen(), Pitch::Bs2);
         assert_eq!(Pitch::Cb1.sharpen(), Pitch::C1);
@@ -536,7 +536,7 @@ mod tests {
     }
 
     #[test]
-    fn flatten_pitch() {
+    fn flatten_pitch_examples() {
         assert_eq!(Pitch::Ex8.flatten(), Pitch::Es8);
         assert_eq!(Pitch::Fs7.flatten(), Pitch::F7);
         assert_eq!(Pitch::G6.flatten(), Pitch::Gb6);
@@ -714,7 +714,7 @@ mod tests {
     }
 
     #[test]
-    fn pitch_class_enharmonic() {
+    fn pitch_class_enharmonic_examples() {
         assert_enharmonic!(PitchClass::A, PitchClass::A);
         assert_enharmonic!(PitchClass::Ab, PitchClass::Gs);
         assert_enharmonic!(PitchClass::Cx, PitchClass::D);
@@ -740,7 +740,7 @@ mod tests {
     }
 
     #[test]
-    fn pitch_enharmonic() {
+    fn pitch_enharmonic_examples() {
         assert_enharmonic!(Pitch::A4, Pitch::A4);
         assert_enharmonic!(Pitch::Ab3, Pitch::Gs3);
         assert_enharmonic!(Pitch::Cx2, Pitch::D2);
