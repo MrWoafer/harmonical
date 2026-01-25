@@ -2,10 +2,13 @@ use std::{fmt::Display, num::NonZeroUsize, ops::Sub};
 
 use paste::paste;
 
-use crate::intervals::{
-    IntervalDirection, MajorMinorIntervalQuality, OrderedPitchClassInterval,
-    OrderedPitchClassIntervalNumber, OrderedPitchInterval, PerfectIntervalQuality,
-    UnorderedPitchInterval, UnorderedSimplePitchInterval,
+use crate::{
+    enharmonic::Enharmonic,
+    intervals::{
+        IntervalDirection, MajorMinorIntervalQuality, OrderedPitchClassInterval,
+        OrderedPitchClassIntervalNumber, OrderedPitchInterval, PerfectIntervalQuality,
+        UnorderedPitchInterval, UnorderedSimplePitchInterval,
+    },
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -249,6 +252,12 @@ impl PitchClass {
     }
 }
 
+impl Enharmonic for PitchClass {
+    fn enharmonic(&self, other: &Self) -> bool {
+        self.pitch_class_number() == other.pitch_class_number()
+    }
+}
+
 impl Display for PitchClass {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Self { letter, accidental } = self;
@@ -418,6 +427,12 @@ impl Pitch {
     }
 }
 
+impl Enharmonic for Pitch {
+    fn enharmonic(&self, other: &Self) -> bool {
+        self.pitch_number() == other.pitch_number()
+    }
+}
+
 impl Display for Pitch {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Self { class, octave } = self;
@@ -485,6 +500,8 @@ mod tests {
     use std::num::NonZeroUsize;
 
     use quickcheck_macros::quickcheck;
+
+    use crate::{assert_enharmonic, assert_not_enharmonic};
 
     use super::*;
 
@@ -694,5 +711,90 @@ mod tests {
     #[quickcheck]
     fn pitch_sub_octave_invariant(a: Pitch, b: Pitch) {
         assert_eq!(a - b, a.octave_up() - b.octave_up());
+    }
+
+    #[test]
+    fn pitch_class_enharmonic() {
+        assert_enharmonic!(PitchClass::A, PitchClass::A);
+        assert_enharmonic!(PitchClass::Ab, PitchClass::Gs);
+        assert_enharmonic!(PitchClass::Cx, PitchClass::D);
+        assert_enharmonic!(PitchClass::Fb, PitchClass::E);
+        assert_enharmonic!(PitchClass::Bx, PitchClass::Cs);
+        assert_enharmonic!(PitchClass::Cb, PitchClass::B);
+
+        assert_not_enharmonic!(PitchClass::C, PitchClass::D);
+        assert_not_enharmonic!(PitchClass::Gb, PitchClass::F);
+        assert_not_enharmonic!(PitchClass::Ax, PitchClass::Bs);
+    }
+
+    #[quickcheck]
+    fn pitch_class_enharmonic_to_self(pitch_class: PitchClass) {
+        assert_enharmonic!(pitch_class, pitch_class);
+    }
+
+    #[quickcheck]
+    fn pitch_class_eq_implies_enharmonic(a: PitchClass, b: PitchClass) {
+        if a == b {
+            assert_enharmonic!(a, b);
+        }
+    }
+
+    #[test]
+    fn pitch_enharmonic() {
+        assert_enharmonic!(Pitch::A4, Pitch::A4);
+        assert_enharmonic!(Pitch::Ab3, Pitch::Gs3);
+        assert_enharmonic!(Pitch::Cx2, Pitch::D2);
+        assert_enharmonic!(Pitch::Fb5, Pitch::E5);
+        assert_enharmonic!(Pitch::Bx2, Pitch::Cs3);
+        assert_enharmonic!(Pitch::Cb5, Pitch::B4);
+
+        assert_not_enharmonic!(Pitch::C3, Pitch::D3);
+        assert_not_enharmonic!(Pitch::Gb4, Pitch::F4);
+        assert_not_enharmonic!(Pitch::Ax6, Pitch::Bs6);
+        assert_not_enharmonic!(Pitch::A4, Pitch::A5);
+        assert_not_enharmonic!(Pitch::Cb5, Pitch::B5);
+        assert_not_enharmonic!(Pitch::Bs3, Pitch::C3);
+    }
+
+    #[quickcheck]
+    fn pitch_enharmonic_to_self(pitch: Pitch) {
+        assert_enharmonic!(pitch, pitch);
+    }
+
+    #[quickcheck]
+    fn pitch_eq_implies_enharmonic(a: Pitch, b: Pitch) {
+        if a == b {
+            assert_enharmonic!(a, b);
+        }
+    }
+
+    #[quickcheck]
+    fn pitch_enharmonic_sharpen_invariant(a: Pitch, b: Pitch) {
+        if let Ok(a_sharpened) = a.try_sharpen()
+            && let Ok(b_sharpened) = b.try_sharpen()
+        {
+            assert_eq!(a.enharmonic(&b), a_sharpened.enharmonic(&b_sharpened));
+        }
+    }
+
+    #[quickcheck]
+    fn pitch_enharmonic_flatten_invariant(a: Pitch, b: Pitch) {
+        if let Ok(a_flattened) = a.try_flatten()
+            && let Ok(b_flattened) = b.try_flatten()
+        {
+            assert_eq!(a.enharmonic(&b), a_flattened.enharmonic(&b_flattened));
+        }
+    }
+
+    #[quickcheck]
+    fn pitch_enharmonic_octave_invariant(a: Pitch, b: Pitch) {
+        assert_eq!(a.enharmonic(&b), a.octave_up().enharmonic(&b.octave_up()));
+    }
+
+    #[quickcheck]
+    fn pitch_enharmonic_implies_pitch_class_enharmonic(a: Pitch, b: Pitch) {
+        if a.enharmonic(&b) {
+            assert_enharmonic!(a.class, b.class);
+        }
     }
 }

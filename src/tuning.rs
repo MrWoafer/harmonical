@@ -125,6 +125,8 @@ mod tests {
     use approx::assert_abs_diff_eq;
     use quickcheck_macros::quickcheck;
 
+    use crate::enharmonic::Enharmonic;
+
     use super::*;
 
     #[test]
@@ -167,5 +169,12 @@ mod tests {
             TET12::A440.hz(&pitch) / 2.0,
             epsilon = 0.001
         );
+    }
+
+    #[quickcheck]
+    fn enharmonic_pitches_have_same_hz(a: Pitch, b: Pitch) {
+        if a.enharmonic(&b) {
+            assert_abs_diff_eq!(TET12::A440.hz(&a), TET12::A440.hz(&b), epsilon = 0.001);
+        }
     }
 }
