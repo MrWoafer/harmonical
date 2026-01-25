@@ -362,6 +362,14 @@ impl Pitch {
     make_pitch_consts!(F);
     make_pitch_consts!(G);
 
+    pub const fn letter(&self) -> Letter {
+        self.class.letter
+    }
+
+    pub const fn accidental(&self) -> Accidental {
+        self.class.accidental
+    }
+
     pub fn try_sharpen(self) -> Result<Self, ()> {
         let Self { class, octave } = self;
 
