@@ -1,5 +1,6 @@
-use std::{num::NonZeroUsize, ops::Neg};
+use std::{fmt::Display, num::NonZeroUsize, ops::Neg};
 
+use num2words::Num2Words;
 use paste::paste;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -89,6 +90,12 @@ impl Ord for MajorMinorIntervalQuality {
     }
 }
 
+impl Display for MajorMinorIntervalQuality {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        IntervalQuality::from(*self).fmt(f)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PerfectIntervalQuality {
     Perfect,
@@ -165,6 +172,12 @@ impl PartialOrd for PerfectIntervalQuality {
 impl Ord for PerfectIntervalQuality {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.index().cmp(&other.index())
+    }
+}
+
+impl Display for PerfectIntervalQuality {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        IntervalQuality::from(*self).fmt(f)
     }
 }
 
@@ -272,6 +285,38 @@ impl TryFrom<IntervalQuality> for PerfectIntervalQuality {
     }
 }
 
+impl Display for IntervalQuality {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if f.alternate() {
+            match self {
+                Self::Perfect => write!(f, "perfect"),
+                Self::Major => write!(f, "major"),
+                Self::Minor => write!(f, "minor"),
+                Self::Augmented(times) => match times.get() {
+                    0 => unreachable!(),
+                    1 => write!(f, "augmented"),
+                    2 => write!(f, "doubly augmented"),
+                    times @ 3.. => write!(f, "{times}x augmented"),
+                },
+                Self::Diminished(times) => match times.get() {
+                    0 => unreachable!(),
+                    1 => write!(f, "diminished"),
+                    2 => write!(f, "doubly diminished"),
+                    times @ 3.. => write!(f, "{times}x diminished"),
+                },
+            }
+        } else {
+            match self {
+                Self::Perfect => write!(f, "P"),
+                Self::Major => write!(f, "M"),
+                Self::Minor => write!(f, "m"),
+                Self::Augmented(times) => write!(f, "{}", "A".repeat(times.get())),
+                Self::Diminished(times) => write!(f, "{}", "d".repeat(times.get())),
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum OrderedPitchClassIntervalNumber {
     Unison,
@@ -320,6 +365,27 @@ impl OrderedPitchClassIntervalNumber {
         match number {
             0 => Err(()),
             _ => Self::try_from_zero_based(number - 1),
+        }
+    }
+}
+
+impl Display for OrderedPitchClassIntervalNumber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if f.alternate() {
+            match self {
+                Self::Unison => write!(f, "unison"),
+                Self::Octave => write!(f, "octave"),
+                _ => write!(
+                    f,
+                    "{}",
+                    Num2Words::new(self.one_based() as u32)
+                        .ordinal()
+                        .to_words()
+                        .expect("ordinal formatting should succeed")
+                ),
+            }
+        } else {
+            write!(f, "{}", self.one_based())
         }
     }
 }
@@ -417,6 +483,16 @@ impl OrderedPitchClassInterval {
     }
 }
 
+impl Display for OrderedPitchClassInterval {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if f.alternate() {
+            write!(f, "{:#} {:#}", self.quality(), self.interval_number())
+        } else {
+            write!(f, "{}{}", self.quality(), self.interval_number())
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum UnorderedSimplePitchIntervalNumber {
     Unison,
@@ -462,6 +538,26 @@ impl UnorderedSimplePitchIntervalNumber {
         match number {
             0 => Err(()),
             _ => Self::try_from_zero_based(number - 1),
+        }
+    }
+}
+
+impl Display for UnorderedSimplePitchIntervalNumber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if f.alternate() {
+            match self {
+                Self::Unison => write!(f, "unison"),
+                _ => write!(
+                    f,
+                    "{}",
+                    Num2Words::new(self.one_based() as u32)
+                        .ordinal()
+                        .to_words()
+                        .expect("ordinal formatting should succeed")
+                ),
+            }
+        } else {
+            write!(f, "{}", self.one_based())
         }
     }
 }
@@ -572,6 +668,16 @@ impl UnorderedSimplePitchInterval {
             Self::Fifth(quality) => Self::Fifth(quality.diminish()),
             Self::Sixth(quality) => Self::Sixth(quality.diminish()),
             Self::Seventh(quality) => Self::Seventh(quality.diminish()),
+        }
+    }
+}
+
+impl Display for UnorderedSimplePitchInterval {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if f.alternate() {
+            write!(f, "{:#} {:#}", self.quality(), self.interval_number())
+        } else {
+            write!(f, "{}{}", self.quality(), self.interval_number())
         }
     }
 }
@@ -687,6 +793,32 @@ impl UnorderedPitchIntervalNumber {
 impl From<UnorderedSimplePitchIntervalNumber> for UnorderedPitchIntervalNumber {
     fn from(simple: UnorderedSimplePitchIntervalNumber) -> Self {
         Self { octaves: 0, simple }
+    }
+}
+
+impl Display for UnorderedPitchIntervalNumber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if f.alternate() {
+            if self.zero_based() % 7 == 0 {
+                match self.octaves {
+                    0 => write!(f, "unison"),
+                    1 => write!(f, "octave"),
+                    2 => write!(f, "double octave"),
+                    octaves => write!(f, "{octaves}x octave"),
+                }
+            } else {
+                write!(
+                    f,
+                    "{}",
+                    Num2Words::new(self.one_based() as u32)
+                        .ordinal()
+                        .to_words()
+                        .expect("ordinal formatting should succeed")
+                )
+            }
+        } else {
+            write!(f, "{}", self.one_based())
+        }
     }
 }
 
@@ -863,6 +995,16 @@ impl From<UnorderedSimplePitchInterval> for UnorderedPitchInterval {
     }
 }
 
+impl Display for UnorderedPitchInterval {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if f.alternate() {
+            write!(f, "{:#} {:#}", self.quality(), self.interval_number())
+        } else {
+            write!(f, "{}{}", self.quality(), self.interval_number())
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum IntervalDirection {
     Descending,
@@ -880,10 +1022,41 @@ impl Neg for IntervalDirection {
     }
 }
 
+impl Display for IntervalDirection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if f.alternate() {
+            match self {
+                Self::Descending => write!(f, "descending"),
+                Self::Ascending => write!(f, "ascending"),
+            }
+        } else {
+            match self {
+                Self::Descending => write!(f, "-"),
+                Self::Ascending => write!(f, "+"),
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Hash)]
 pub struct OrderedPitchIntervalNumber {
     pub direction: IntervalDirection,
     pub unordered: UnorderedPitchIntervalNumber,
+}
+
+impl Display for OrderedPitchIntervalNumber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self {
+            direction,
+            unordered,
+        } = self;
+
+        if f.alternate() {
+            write!(f, "{:#} {:#}", direction, unordered)
+        } else {
+            write!(f, "{}{}", direction, unordered)
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Eq, Hash)]
@@ -1056,6 +1229,27 @@ impl Neg for OrderedPitchInterval {
     }
 }
 
+impl Display for OrderedPitchInterval {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self {
+                direction: _,
+                unordered: UnorderedPitchInterval::PERFECT_UNISON,
+            } => UnorderedPitchInterval::PERFECT_UNISON.fmt(f),
+            Self {
+                direction,
+                unordered,
+            } => {
+                if f.alternate() {
+                    write!(f, "{:#} {:#}", direction, unordered)
+                } else {
+                    write!(f, "{}{}", direction, unordered)
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use quickcheck_macros::quickcheck;
@@ -1222,5 +1416,97 @@ mod tests {
     #[quickcheck]
     fn ordered_pitch_interval_eq_agrees_with_ord(a: OrderedPitchInterval, b: OrderedPitchInterval) {
         assert_eq!(a == b, a.cmp(&b) == std::cmp::Ordering::Equal);
+    }
+
+    #[test]
+    fn ordered_pitch_interval_display() {
+        assert_eq!(
+            format!("{}", UnorderedPitchInterval::PERFECT_UNISON.ascending()),
+            "P1"
+        );
+
+        assert_eq!(
+            format!("{}", UnorderedPitchInterval::MAJOR_NINTH.ascending()),
+            "+M9"
+        );
+
+        assert_eq!(
+            format!("{}", UnorderedPitchInterval::MINOR_SEVENTH.descending()),
+            "-m7"
+        );
+
+        assert_eq!(
+            format!("{}", UnorderedPitchInterval::AUGMENTED_FIFTH.descending()),
+            "-A5"
+        );
+
+        assert_eq!(
+            format!(
+                "{}",
+                UnorderedPitchInterval::DOUBLY_DIMINISHED_ELEVENTH.ascending()
+            ),
+            "+dd11"
+        );
+
+        assert_eq!(
+            format!("{:#}", UnorderedPitchInterval::AUGMENTED_UNISON.ascending()),
+            "ascending augmented unison"
+        );
+
+        assert_eq!(
+            format!("{:#}", UnorderedPitchInterval::OCTAVE.ascending()),
+            "ascending perfect octave"
+        );
+
+        assert_eq!(
+            format!("{:#}", UnorderedPitchInterval::AUGMENTED_OCTAVE.ascending()),
+            "ascending augmented octave"
+        );
+
+        assert_eq!(
+            format!("{:#}", UnorderedPitchInterval::DOUBLE_OCTAVE.descending()),
+            "descending perfect double octave"
+        );
+
+        assert_eq!(
+            format!(
+                "{:#}",
+                UnorderedPitchInterval {
+                    octaves: 3,
+                    simple: UnorderedSimplePitchInterval::DIMINISHED_UNISON
+                }
+                .ascending()
+            ),
+            "ascending diminished 3x octave"
+        );
+
+        assert_eq!(
+            format!("{:#}", UnorderedPitchInterval::MAJOR_THIRD.descending()),
+            "descending major third"
+        );
+
+        assert_eq!(
+            format!("{:#}", UnorderedPitchInterval::MINOR_NINTH.descending()),
+            "descending minor ninth"
+        );
+
+        assert_eq!(
+            format!(
+                "{:#}",
+                UnorderedPitchInterval::DOUBLY_AUGMENTED_FIFTH.ascending()
+            ),
+            "ascending doubly augmented fifth"
+        );
+
+        assert_eq!(
+            format!(
+                "{:#}",
+                UnorderedPitchInterval::DOUBLY_DIMINISHED_SECOND
+                    .diminish()
+                    .diminish()
+                    .descending()
+            ),
+            "descending 4x diminished second"
+        );
     }
 }
