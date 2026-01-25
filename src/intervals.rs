@@ -747,6 +747,12 @@ impl Neg for IntervalDirection {
     }
 }
 
+#[derive(Debug, Clone, Copy, Hash)]
+pub struct OrderedPitchIntervalNumber {
+    pub direction: IntervalDirection,
+    pub unordered: UnorderedPitchIntervalNumber,
+}
+
 #[derive(Debug, Clone, Copy, Eq, Hash)]
 pub struct OrderedPitchInterval {
     pub direction: IntervalDirection,
@@ -754,6 +760,18 @@ pub struct OrderedPitchInterval {
 }
 
 impl OrderedPitchInterval {
+    pub const fn interval_number(&self) -> OrderedPitchIntervalNumber {
+        let Self {
+            direction,
+            unordered,
+        } = self;
+
+        OrderedPitchIntervalNumber {
+            direction: *direction,
+            unordered: unordered.interval_number(),
+        }
+    }
+
     pub const fn augment(self) -> Self {
         let Self {
             direction,
