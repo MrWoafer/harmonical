@@ -125,11 +125,11 @@ impl PerfectIntervalQuality {
 
     pub const fn augment(self) -> Self {
         match self {
-            Self::Perfect => Self::Augmented(NonZeroUsize::new(1).unwrap()),
             Self::Augmented(times) => Self::Augmented(times.checked_add(1).expect(
                 "realistically something shouldn't be augmented enough times for an overflow to \
                 occur",
             )),
+            Self::Perfect => Self::Augmented(NonZeroUsize::new(1).unwrap()),
             Self::Diminished(times) => match times.get() {
                 0 => unreachable!(),
                 1 => Self::Perfect,
@@ -165,6 +165,110 @@ impl PartialOrd for PerfectIntervalQuality {
 impl Ord for PerfectIntervalQuality {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.index().cmp(&other.index())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum IntervalQuality {
+    Perfect,
+    Major,
+    Minor,
+    Augmented(NonZeroUsize),
+    Diminished(NonZeroUsize),
+}
+
+impl IntervalQuality {
+    pub const fn invert(self) -> Self {
+        match self {
+            Self::Augmented(times) => Self::Diminished(times),
+            Self::Major => Self::Minor,
+            Self::Perfect => Self::Perfect,
+            Self::Minor => Self::Major,
+            Self::Diminished(times) => Self::Augmented(times),
+        }
+    }
+
+    pub const fn augment(self) -> Self {
+        match self {
+            Self::Augmented(times) => Self::Augmented(times.checked_add(1).expect(
+                "realistically something shouldn't be augmented enough times for an overflow to \
+                occur",
+            )),
+            Self::Perfect | Self::Major => Self::Augmented(NonZeroUsize::new(1).unwrap()),
+            Self::Minor => Self::Major,
+            Self::Diminished(times) => match times.get() {
+                0 => unreachable!(),
+                1 => Self::Perfect,
+                times => {
+                    Self::Diminished(NonZeroUsize::new(times - 1).expect("should be non-zero"))
+                }
+            },
+        }
+    }
+
+    pub const fn diminish(self) -> Self {
+        match self {
+            Self::Augmented(times) => match times.get() {
+                0 => unreachable!(),
+                1 => Self::Perfect,
+                times => Self::Augmented(NonZeroUsize::new(times - 1).expect("should be non-zero")),
+            },
+            Self::Major => Self::Minor,
+            Self::Perfect | Self::Minor => Self::Diminished(NonZeroUsize::new(1).unwrap()),
+            Self::Diminished(times) => Self::Diminished(times.checked_add(1).expect(
+                "realistically something shouldn't be diminished enough times for an overflow to \
+                occur",
+            )),
+        }
+    }
+}
+
+impl From<MajorMinorIntervalQuality> for IntervalQuality {
+    fn from(quality: MajorMinorIntervalQuality) -> Self {
+        match quality {
+            MajorMinorIntervalQuality::Major => Self::Major,
+            MajorMinorIntervalQuality::Minor => Self::Minor,
+            MajorMinorIntervalQuality::Augmented(times) => Self::Augmented(times),
+            MajorMinorIntervalQuality::Diminished(times) => Self::Diminished(times),
+        }
+    }
+}
+
+impl From<PerfectIntervalQuality> for IntervalQuality {
+    fn from(quality: PerfectIntervalQuality) -> Self {
+        match quality {
+            PerfectIntervalQuality::Perfect => Self::Perfect,
+            PerfectIntervalQuality::Augmented(times) => Self::Augmented(times),
+            PerfectIntervalQuality::Diminished(times) => Self::Diminished(times),
+        }
+    }
+}
+
+impl TryFrom<IntervalQuality> for MajorMinorIntervalQuality {
+    type Error = ();
+
+    fn try_from(quality: IntervalQuality) -> Result<Self, Self::Error> {
+        match quality {
+            IntervalQuality::Perfect => Err(()),
+            IntervalQuality::Major => Ok(Self::Major),
+            IntervalQuality::Minor => Ok(Self::Minor),
+            IntervalQuality::Augmented(times) => Ok(Self::Augmented(times)),
+            IntervalQuality::Diminished(times) => Ok(Self::Diminished(times)),
+        }
+    }
+}
+
+impl TryFrom<IntervalQuality> for PerfectIntervalQuality {
+    type Error = ();
+
+    fn try_from(quality: IntervalQuality) -> Result<Self, Self::Error> {
+        match quality {
+            IntervalQuality::Perfect => Ok(Self::Perfect),
+            IntervalQuality::Major => Err(()),
+            IntervalQuality::Minor => Err(()),
+            IntervalQuality::Augmented(times) => Ok(Self::Augmented(times)),
+            IntervalQuality::Diminished(times) => Ok(Self::Diminished(times)),
+        }
     }
 }
 
