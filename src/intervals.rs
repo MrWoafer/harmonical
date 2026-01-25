@@ -916,7 +916,8 @@ impl UnorderedPitchInterval {
         simple: UnorderedSimplePitchInterval::DIMINISHED_UNISON,
     };
 
-    pub const OCTAVE: Self = Self {
+    #[doc(alias = "OCTAVE")]
+    pub const PERFECT_OCTAVE: Self = Self {
         octaves: 1,
         simple: UnorderedSimplePitchInterval::PERFECT_UNISON,
     };
@@ -938,7 +939,8 @@ impl UnorderedPitchInterval {
     make_unordered_pitch_interval_consts!(MajorMinor, THIRTEENTH, Sixth, 1);
     make_unordered_pitch_interval_consts!(MajorMinor, FOURTEENTH, Seventh, 1);
 
-    pub const DOUBLE_OCTAVE: Self = Self {
+    #[doc(alias = "DOUBLE_OCTAVE")]
+    pub const PERFECT_DOUBLE_OCTAVE: Self = Self {
         octaves: 2,
         simple: UnorderedSimplePitchInterval::PERFECT_UNISON,
     };
@@ -1454,7 +1456,7 @@ mod tests {
         );
 
         assert_eq!(
-            format!("{:#}", UnorderedPitchInterval::OCTAVE.ascending()),
+            format!("{:#}", UnorderedPitchInterval::PERFECT_OCTAVE.ascending()),
             "ascending perfect octave"
         );
 
@@ -1464,7 +1466,10 @@ mod tests {
         );
 
         assert_eq!(
-            format!("{:#}", UnorderedPitchInterval::DOUBLE_OCTAVE.descending()),
+            format!(
+                "{:#}",
+                UnorderedPitchInterval::PERFECT_DOUBLE_OCTAVE.descending()
+            ),
             "descending perfect double octave"
         );
 
