@@ -6,8 +6,8 @@ use quickcheck::Arbitrary;
 
 use crate::{
     intervals::{
-        IntervalDirection, MajorMinorQuality, OrderedPitchClassInterval,
-        OrderedPitchClassIntervalNumber, OrderedPitchInterval, PerfectQuality,
+        IntervalDirection, MajorMinorIntervalQuality, OrderedPitchClassInterval,
+        OrderedPitchClassIntervalNumber, OrderedPitchInterval, PerfectIntervalQuality,
         UnorderedPitchInterval, UnorderedPitchIntervalNumber, UnorderedSimplePitchInterval,
         UnorderedSimplePitchIntervalNumber,
     },
@@ -60,7 +60,7 @@ impl Arbitrary for Pitch {
     }
 }
 
-impl Arbitrary for MajorMinorQuality {
+impl Arbitrary for MajorMinorIntervalQuality {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         let choices = &[
             Self::Major,
@@ -77,7 +77,7 @@ impl Arbitrary for MajorMinorQuality {
     }
 }
 
-impl Arbitrary for PerfectQuality {
+impl Arbitrary for PerfectIntervalQuality {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         let choices = &[
             Self::Perfect,

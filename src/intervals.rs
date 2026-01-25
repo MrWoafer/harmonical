@@ -3,14 +3,14 @@ use std::{num::NonZeroUsize, ops::Neg};
 use paste::paste;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum MajorMinorQuality {
+pub enum MajorMinorIntervalQuality {
     Major,
     Minor,
     Augmented(NonZeroUsize),
     Diminished(NonZeroUsize),
 }
 
-impl MajorMinorQuality {
+impl MajorMinorIntervalQuality {
     fn index(&self) -> isize {
         match self {
             Self::Augmented(times) => 1 + times.get() as isize,
@@ -77,26 +77,26 @@ impl MajorMinorQuality {
     }
 }
 
-impl PartialOrd for MajorMinorQuality {
+impl PartialOrd for MajorMinorIntervalQuality {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for MajorMinorQuality {
+impl Ord for MajorMinorIntervalQuality {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.index().cmp(&other.index())
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum PerfectQuality {
+pub enum PerfectIntervalQuality {
     Perfect,
     Augmented(NonZeroUsize),
     Diminished(NonZeroUsize),
 }
 
-impl PerfectQuality {
+impl PerfectIntervalQuality {
     fn index(&self) -> isize {
         match self {
             Self::Augmented(times) => times.get() as isize,
@@ -156,13 +156,13 @@ impl PerfectQuality {
     }
 }
 
-impl PartialOrd for PerfectQuality {
+impl PartialOrd for PerfectIntervalQuality {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for PerfectQuality {
+impl Ord for PerfectIntervalQuality {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.index().cmp(&other.index())
     }
@@ -222,13 +222,13 @@ impl OrderedPitchClassIntervalNumber {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum OrderedPitchClassInterval {
-    Unison(PerfectQuality),
-    Second(MajorMinorQuality),
-    Third(MajorMinorQuality),
-    Fourth(PerfectQuality),
-    Fifth(PerfectQuality),
-    Sixth(MajorMinorQuality),
-    Seventh(MajorMinorQuality),
+    Unison(PerfectIntervalQuality),
+    Second(MajorMinorIntervalQuality),
+    Third(MajorMinorIntervalQuality),
+    Fourth(PerfectIntervalQuality),
+    Fifth(PerfectIntervalQuality),
+    Sixth(MajorMinorIntervalQuality),
+    Seventh(MajorMinorIntervalQuality),
     DiminishedOctave(NonZeroUsize),
 }
 
@@ -236,31 +236,31 @@ macro_rules! make_ordered_pitch_class_interval_consts {
     (Perfect, $number:ident) => {
         paste! {
             pub const [< DOUBLY_ AUGMENTED_$number:upper >]: Self =
-                Self::$number(PerfectQuality::Augmented(NonZeroUsize::new(2).unwrap()));
+                Self::$number(PerfectIntervalQuality::Augmented(NonZeroUsize::new(2).unwrap()));
             pub const [< AUGMENTED_$number:upper >]: Self =
-                Self::$number(PerfectQuality::Augmented(NonZeroUsize::new(1).unwrap()));
+                Self::$number(PerfectIntervalQuality::Augmented(NonZeroUsize::new(1).unwrap()));
             pub const [< PERFECT_$number:upper >]: Self =
-                Self::$number(PerfectQuality::Perfect);
+                Self::$number(PerfectIntervalQuality::Perfect);
             pub const [< DIMINISHED_$number:upper >]: Self =
-                Self::$number(PerfectQuality::Diminished(NonZeroUsize::new(1).unwrap()));
+                Self::$number(PerfectIntervalQuality::Diminished(NonZeroUsize::new(1).unwrap()));
             pub const [< DOUBLY_DIMINISHED_$number:upper >]: Self =
-                Self::$number(PerfectQuality::Diminished(NonZeroUsize::new(2).unwrap()));
+                Self::$number(PerfectIntervalQuality::Diminished(NonZeroUsize::new(2).unwrap()));
         }
     };
     (MajorMinor, $number:ident) => {
         paste! {
             pub const [< DOUBLY_AUGMENTED_$number:upper >]: Self =
-                Self::$number(MajorMinorQuality::Augmented(NonZeroUsize::new(2).unwrap()));
+                Self::$number(MajorMinorIntervalQuality::Augmented(NonZeroUsize::new(2).unwrap()));
             pub const [< AUGMENTED_$number:upper >]: Self =
-                Self::$number(MajorMinorQuality::Augmented(NonZeroUsize::new(1).unwrap()));
+                Self::$number(MajorMinorIntervalQuality::Augmented(NonZeroUsize::new(1).unwrap()));
             pub const [< MAJOR_$number:upper >]: Self =
-                Self::$number(MajorMinorQuality::Major);
+                Self::$number(MajorMinorIntervalQuality::Major);
             pub const [< MINOR_$number:upper >]: Self =
-                Self::$number(MajorMinorQuality::Minor);
+                Self::$number(MajorMinorIntervalQuality::Minor);
             pub const [< DIMINISHED_$number:upper >]: Self =
-                Self::$number(MajorMinorQuality::Diminished(NonZeroUsize::new(1).unwrap()));
+                Self::$number(MajorMinorIntervalQuality::Diminished(NonZeroUsize::new(1).unwrap()));
             pub const [< DOUBLY_DIMINISHED_$number:upper >]: Self =
-                Self::$number(MajorMinorQuality::Diminished(NonZeroUsize::new(2).unwrap()));
+                Self::$number(MajorMinorIntervalQuality::Diminished(NonZeroUsize::new(2).unwrap()));
         }
     };
 }
@@ -351,44 +351,44 @@ impl UnorderedSimplePitchIntervalNumber {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum UnorderedSimplePitchInterval {
-    Unison(PerfectQuality),
-    Second(MajorMinorQuality),
-    Third(MajorMinorQuality),
-    Fourth(PerfectQuality),
-    Fifth(PerfectQuality),
-    Sixth(MajorMinorQuality),
-    Seventh(MajorMinorQuality),
+    Unison(PerfectIntervalQuality),
+    Second(MajorMinorIntervalQuality),
+    Third(MajorMinorIntervalQuality),
+    Fourth(PerfectIntervalQuality),
+    Fifth(PerfectIntervalQuality),
+    Sixth(MajorMinorIntervalQuality),
+    Seventh(MajorMinorIntervalQuality),
 }
 
 macro_rules! make_unordered_simple_pitch_interval_consts {
     (Perfect, $number:ident) => {
         paste! {
             pub const [< DOUBLY_ AUGMENTED_$number:upper >]: Self =
-                Self::$number(PerfectQuality::Augmented(NonZeroUsize::new(2).unwrap()));
+                Self::$number(PerfectIntervalQuality::Augmented(NonZeroUsize::new(2).unwrap()));
             pub const [< AUGMENTED_$number:upper >]: Self =
-                Self::$number(PerfectQuality::Augmented(NonZeroUsize::new(1).unwrap()));
+                Self::$number(PerfectIntervalQuality::Augmented(NonZeroUsize::new(1).unwrap()));
             pub const [< PERFECT_$number:upper >]: Self =
-                Self::$number(PerfectQuality::Perfect);
+                Self::$number(PerfectIntervalQuality::Perfect);
             pub const [< DIMINISHED_$number:upper >]: Self =
-                Self::$number(PerfectQuality::Diminished(NonZeroUsize::new(1).unwrap()));
+                Self::$number(PerfectIntervalQuality::Diminished(NonZeroUsize::new(1).unwrap()));
             pub const [< DOUBLY_DIMINISHED_$number:upper >]: Self =
-                Self::$number(PerfectQuality::Diminished(NonZeroUsize::new(2).unwrap()));
+                Self::$number(PerfectIntervalQuality::Diminished(NonZeroUsize::new(2).unwrap()));
         }
     };
     (MajorMinor, $number:ident) => {
         paste! {
             pub const [< DOUBLY_AUGMENTED_$number:upper >]: Self =
-                Self::$number(MajorMinorQuality::Augmented(NonZeroUsize::new(2).unwrap()));
+                Self::$number(MajorMinorIntervalQuality::Augmented(NonZeroUsize::new(2).unwrap()));
             pub const [< AUGMENTED_$number:upper >]: Self =
-                Self::$number(MajorMinorQuality::Augmented(NonZeroUsize::new(1).unwrap()));
+                Self::$number(MajorMinorIntervalQuality::Augmented(NonZeroUsize::new(1).unwrap()));
             pub const [< MAJOR_$number:upper >]: Self =
-                Self::$number(MajorMinorQuality::Major);
+                Self::$number(MajorMinorIntervalQuality::Major);
             pub const [< MINOR_$number:upper >]: Self =
-                Self::$number(MajorMinorQuality::Minor);
+                Self::$number(MajorMinorIntervalQuality::Minor);
             pub const [< DIMINISHED_$number:upper >]: Self =
-                Self::$number(MajorMinorQuality::Diminished(NonZeroUsize::new(1).unwrap()));
+                Self::$number(MajorMinorIntervalQuality::Diminished(NonZeroUsize::new(1).unwrap()));
             pub const [< DOUBLY_DIMINISHED_$number:upper >]: Self =
-                Self::$number(MajorMinorQuality::Diminished(NonZeroUsize::new(2).unwrap()));
+                Self::$number(MajorMinorIntervalQuality::Diminished(NonZeroUsize::new(2).unwrap()));
         }
     };
 }

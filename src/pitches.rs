@@ -3,9 +3,9 @@ use std::{fmt::Display, num::NonZeroUsize, ops::Sub};
 use paste::paste;
 
 use crate::intervals::{
-    IntervalDirection, MajorMinorQuality, OrderedPitchClassInterval,
-    OrderedPitchClassIntervalNumber, OrderedPitchInterval, PerfectQuality, UnorderedPitchInterval,
-    UnorderedSimplePitchInterval,
+    IntervalDirection, MajorMinorIntervalQuality, OrderedPitchClassInterval,
+    OrderedPitchClassIntervalNumber, OrderedPitchInterval, PerfectIntervalQuality,
+    UnorderedPitchInterval, UnorderedSimplePitchInterval,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -276,25 +276,25 @@ impl Sub for PitchClass {
 
         match interval_number {
             OrderedPitchClassIntervalNumber::Unison => OrderedPitchClassInterval::Unison(
-                PerfectQuality::from_index(pitch_class_number_difference),
+                PerfectIntervalQuality::from_index(pitch_class_number_difference),
             ),
             OrderedPitchClassIntervalNumber::Second => OrderedPitchClassInterval::Second(
-                MajorMinorQuality::from_index(pitch_class_number_difference - 1),
+                MajorMinorIntervalQuality::from_index(pitch_class_number_difference - 1),
             ),
             OrderedPitchClassIntervalNumber::Third => OrderedPitchClassInterval::Third(
-                MajorMinorQuality::from_index(pitch_class_number_difference - 3),
+                MajorMinorIntervalQuality::from_index(pitch_class_number_difference - 3),
             ),
             OrderedPitchClassIntervalNumber::Fourth => OrderedPitchClassInterval::Fourth(
-                PerfectQuality::from_index(pitch_class_number_difference - 5),
+                PerfectIntervalQuality::from_index(pitch_class_number_difference - 5),
             ),
             OrderedPitchClassIntervalNumber::Fifth => OrderedPitchClassInterval::Fifth(
-                PerfectQuality::from_index(pitch_class_number_difference - 7),
+                PerfectIntervalQuality::from_index(pitch_class_number_difference - 7),
             ),
             OrderedPitchClassIntervalNumber::Sixth => OrderedPitchClassInterval::Sixth(
-                MajorMinorQuality::from_index(pitch_class_number_difference - 8),
+                MajorMinorIntervalQuality::from_index(pitch_class_number_difference - 8),
             ),
             OrderedPitchClassIntervalNumber::Seventh => OrderedPitchClassInterval::Seventh(
-                MajorMinorQuality::from_index(pitch_class_number_difference - 10),
+                MajorMinorIntervalQuality::from_index(pitch_class_number_difference - 10),
             ),
             OrderedPitchClassIntervalNumber::Octave => OrderedPitchClassInterval::DiminishedOctave(
                 NonZeroUsize::new(
@@ -469,7 +469,7 @@ impl Sub for Pitch {
                 UnorderedSimplePitchInterval::Seventh(quality)
             }
             OrderedPitchClassInterval::DiminishedOctave(times) => {
-                UnorderedSimplePitchInterval::Unison(PerfectQuality::Diminished(times))
+                UnorderedSimplePitchInterval::Unison(PerfectIntervalQuality::Diminished(times))
             }
         };
 
@@ -635,7 +635,7 @@ mod tests {
         assert_eq!(
             Pitch::Cbb4 - Pitch::Cx4,
             UnorderedPitchInterval::from(UnorderedSimplePitchInterval::Unison(
-                PerfectQuality::Augmented(NonZeroUsize::new(4).unwrap())
+                PerfectIntervalQuality::Augmented(NonZeroUsize::new(4).unwrap())
             ))
             .descending()
         );
@@ -644,7 +644,7 @@ mod tests {
             Pitch::Cbb5 - Pitch::Cx4,
             UnorderedPitchInterval {
                 octaves: 0,
-                simple: UnorderedSimplePitchInterval::Unison(PerfectQuality::Diminished(
+                simple: UnorderedSimplePitchInterval::Unison(PerfectIntervalQuality::Diminished(
                     NonZeroUsize::new(4).unwrap()
                 ))
             }
@@ -655,7 +655,7 @@ mod tests {
             Pitch::Fx5 - Pitch::Fbb4,
             UnorderedPitchInterval {
                 octaves: 1,
-                simple: UnorderedSimplePitchInterval::Unison(PerfectQuality::Augmented(
+                simple: UnorderedSimplePitchInterval::Unison(PerfectIntervalQuality::Augmented(
                     NonZeroUsize::new(4).unwrap()
                 ))
             }
