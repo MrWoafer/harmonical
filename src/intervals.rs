@@ -220,7 +220,7 @@ impl OrderedPitchClassIntervalNumber {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum OrderedPitchClassInterval {
     Unison(PerfectQuality),
     Second(MajorMinorQuality),
@@ -349,7 +349,7 @@ impl UnorderedSimplePitchIntervalNumber {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum UnorderedSimplePitchInterval {
     Unison(PerfectQuality),
     Second(MajorMinorQuality),
@@ -561,7 +561,7 @@ impl From<UnorderedSimplePitchIntervalNumber> for UnorderedPitchIntervalNumber {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct UnorderedPitchInterval {
     pub octaves: usize,
     pub simple: UnorderedSimplePitchInterval,
@@ -730,10 +730,10 @@ impl From<UnorderedSimplePitchInterval> for UnorderedPitchInterval {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum IntervalDirection {
-    Ascending,
     Descending,
+    Ascending,
 }
 
 impl Neg for IntervalDirection {
@@ -818,6 +818,73 @@ impl PartialEq for OrderedPitchInterval {
     }
 }
 
+impl PartialOrd for OrderedPitchInterval {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for OrderedPitchInterval {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (self, other) {
+            (
+                Self {
+                    direction,
+                    unordered:
+                        UnorderedPitchInterval {
+                            octaves: 0,
+                            simple: UnorderedSimplePitchInterval::Unison(unison_quality),
+                        },
+                },
+                Self {
+                    direction: other_direction,
+                    unordered:
+                        UnorderedPitchInterval {
+                            octaves: 0,
+                            simple: UnorderedSimplePitchInterval::Unison(other_unison_quality),
+                        },
+                },
+            ) => match (direction, other_direction) {
+                (IntervalDirection::Descending, IntervalDirection::Ascending) => {
+                    unison_quality.invert().cmp(other_unison_quality)
+                }
+                (IntervalDirection::Ascending, IntervalDirection::Descending) => {
+                    unison_quality.cmp(&other_unison_quality.invert())
+                }
+                (IntervalDirection::Descending, IntervalDirection::Descending) => {
+                    other_unison_quality.cmp(unison_quality)
+                }
+                (IntervalDirection::Ascending, IntervalDirection::Ascending) => {
+                    unison_quality.cmp(other_unison_quality)
+                }
+            },
+            (
+                Self {
+                    direction,
+                    unordered,
+                },
+                Self {
+                    direction: other_direction,
+                    unordered: other_unordered,
+                },
+            ) => match (direction, other_direction) {
+                (IntervalDirection::Descending, IntervalDirection::Ascending) => {
+                    std::cmp::Ordering::Less
+                }
+                (IntervalDirection::Ascending, IntervalDirection::Descending) => {
+                    std::cmp::Ordering::Greater
+                }
+                (IntervalDirection::Descending, IntervalDirection::Descending) => {
+                    other_unordered.cmp(unordered)
+                }
+                (IntervalDirection::Ascending, IntervalDirection::Ascending) => {
+                    unordered.cmp(other_unordered)
+                }
+            },
+        }
+    }
+}
+
 impl Neg for OrderedPitchInterval {
     type Output = Self;
 
@@ -836,6 +903,8 @@ impl Neg for OrderedPitchInterval {
 
 #[cfg(test)]
 mod tests {
+    use quickcheck_macros::quickcheck;
+
     use super::*;
 
     #[test]
@@ -872,7 +941,7 @@ mod tests {
     }
 
     #[test]
-    fn unison_equality() {
+    fn ordered_pitch_interval_unison_equality() {
         assert_eq!(
             UnorderedPitchInterval::PERFECT_UNISON.ascending(),
             UnorderedPitchInterval::PERFECT_UNISON.ascending()
@@ -906,5 +975,97 @@ mod tests {
             UnorderedPitchInterval::AUGMENTED_UNISON.descending(),
             UnorderedPitchInterval::DIMINISHED_UNISON.descending()
         );
+    }
+
+    #[test]
+    fn ordered_pitch_interval_ordering() {
+        assert_eq!(
+            UnorderedPitchInterval::PERFECT_UNISON
+                .ascending()
+                .cmp(&UnorderedPitchInterval::PERFECT_UNISON.ascending()),
+            std::cmp::Ordering::Equal,
+        );
+        assert_eq!(
+            UnorderedPitchInterval::DIMINISHED_UNISON
+                .ascending()
+                .cmp(&UnorderedPitchInterval::PERFECT_UNISON.ascending()),
+            std::cmp::Ordering::Less,
+        );
+        assert_eq!(
+            UnorderedPitchInterval::DIMINISHED_UNISON
+                .ascending()
+                .cmp(&UnorderedPitchInterval::AUGMENTED_UNISON.ascending()),
+            std::cmp::Ordering::Less,
+        );
+        assert_eq!(
+            UnorderedPitchInterval::DIMINISHED_UNISON
+                .descending()
+                .cmp(&UnorderedPitchInterval::AUGMENTED_UNISON.ascending()),
+            std::cmp::Ordering::Equal,
+        );
+        assert_eq!(
+            UnorderedPitchInterval::DIMINISHED_UNISON
+                .descending()
+                .cmp(&UnorderedPitchInterval::AUGMENTED_UNISON.descending()),
+            std::cmp::Ordering::Greater,
+        );
+
+        assert_eq!(
+            UnorderedPitchInterval::MAJOR_SECOND
+                .descending()
+                .cmp(&UnorderedPitchInterval::PERFECT_UNISON.ascending()),
+            std::cmp::Ordering::Less,
+        );
+        assert_eq!(
+            UnorderedPitchInterval::MAJOR_SECOND
+                .descending()
+                .cmp(&UnorderedPitchInterval::MAJOR_SECOND.ascending()),
+            std::cmp::Ordering::Less,
+        );
+
+        assert_eq!(
+            UnorderedPitchInterval::MAJOR_SECOND
+                .ascending()
+                .cmp(&UnorderedPitchInterval::MINOR_THIRD.ascending()),
+            std::cmp::Ordering::Less,
+        );
+        assert_eq!(
+            UnorderedPitchInterval::AUGMENTED_FIFTH
+                .ascending()
+                .cmp(&UnorderedPitchInterval::MINOR_SIXTH.ascending()),
+            std::cmp::Ordering::Less,
+        );
+        assert_eq!(
+            UnorderedPitchInterval::AUGMENTED_FIFTH
+                .ascending()
+                .cmp(&UnorderedPitchInterval::DIMINISHED_SIXTH.ascending()),
+            std::cmp::Ordering::Less,
+        );
+
+        assert_eq!(
+            UnorderedPitchInterval::MAJOR_THIRD
+                .descending()
+                .cmp(&UnorderedPitchInterval::PERFECT_FIFTH.descending()),
+            std::cmp::Ordering::Greater,
+        );
+        assert_eq!(
+            UnorderedPitchInterval::MAJOR_THIRD
+                .descending()
+                .cmp(&UnorderedPitchInterval::DOUBLY_AUGMENTED_FOURTH.descending()),
+            std::cmp::Ordering::Greater,
+        );
+    }
+
+    #[quickcheck]
+    fn ordered_pitch_interval_ordering_respects_negation(
+        a: OrderedPitchInterval,
+        b: OrderedPitchInterval,
+    ) {
+        assert_eq!((-a).cmp(&-b), a.cmp(&b).reverse());
+    }
+
+    #[quickcheck]
+    fn ordered_pitch_interval_eq_agrees_with_ord(a: OrderedPitchInterval, b: OrderedPitchInterval) {
+        assert_eq!(a == b, a.cmp(&b) == std::cmp::Ordering::Equal);
     }
 }
