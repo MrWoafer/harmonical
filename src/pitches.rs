@@ -3,8 +3,9 @@ use std::{fmt::Display, num::NonZeroUsize, ops::Sub};
 use paste::paste;
 
 use crate::intervals::{
-    IntervalDirection, MajorMinorQuality, OrderedPitchClassInterval, OrderedPitchInterval,
-    PerfectQuality, PitchClassIntervalNumber, UnorderedPitchInterval, UnorderedSimplePitchInterval,
+    IntervalDirection, MajorMinorQuality, OrderedPitchClassInterval,
+    OrderedPitchClassIntervalNumber, OrderedPitchInterval, PerfectQuality, UnorderedPitchInterval,
+    UnorderedSimplePitchInterval,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -59,7 +60,7 @@ impl From<&Letter> for char {
 }
 
 impl Sub for Letter {
-    type Output = PitchClassIntervalNumber;
+    type Output = OrderedPitchClassIntervalNumber;
 
     fn sub(self, rhs: Self) -> Self::Output {
         let interval_number = if self.index_in_octave() >= rhs.index_in_octave() {
@@ -68,7 +69,7 @@ impl Sub for Letter {
             self.index_in_octave() + 7 - rhs.index_in_octave()
         };
 
-        PitchClassIntervalNumber::try_from_zero_based(interval_number)
+        OrderedPitchClassIntervalNumber::try_from_zero_based(interval_number)
             .expect("number should be in valid range")
     }
 }
@@ -261,7 +262,7 @@ impl Sub for PitchClass {
 
     fn sub(self, rhs: Self) -> Self::Output {
         let interval_number = if self.letter == rhs.letter && self.accidental < rhs.accidental {
-            PitchClassIntervalNumber::Octave
+            OrderedPitchClassIntervalNumber::Octave
         } else {
             self.letter - rhs.letter
         };
@@ -274,28 +275,28 @@ impl Sub for PitchClass {
         } as isize;
 
         match interval_number {
-            PitchClassIntervalNumber::Unison => OrderedPitchClassInterval::Unison(
+            OrderedPitchClassIntervalNumber::Unison => OrderedPitchClassInterval::Unison(
                 PerfectQuality::from_index(pitch_class_number_difference),
             ),
-            PitchClassIntervalNumber::Second => OrderedPitchClassInterval::Second(
+            OrderedPitchClassIntervalNumber::Second => OrderedPitchClassInterval::Second(
                 MajorMinorQuality::from_index(pitch_class_number_difference - 1),
             ),
-            PitchClassIntervalNumber::Third => OrderedPitchClassInterval::Third(
+            OrderedPitchClassIntervalNumber::Third => OrderedPitchClassInterval::Third(
                 MajorMinorQuality::from_index(pitch_class_number_difference - 3),
             ),
-            PitchClassIntervalNumber::Fourth => OrderedPitchClassInterval::Fourth(
+            OrderedPitchClassIntervalNumber::Fourth => OrderedPitchClassInterval::Fourth(
                 PerfectQuality::from_index(pitch_class_number_difference - 5),
             ),
-            PitchClassIntervalNumber::Fifth => OrderedPitchClassInterval::Fifth(
+            OrderedPitchClassIntervalNumber::Fifth => OrderedPitchClassInterval::Fifth(
                 PerfectQuality::from_index(pitch_class_number_difference - 7),
             ),
-            PitchClassIntervalNumber::Sixth => OrderedPitchClassInterval::Sixth(
+            OrderedPitchClassIntervalNumber::Sixth => OrderedPitchClassInterval::Sixth(
                 MajorMinorQuality::from_index(pitch_class_number_difference - 8),
             ),
-            PitchClassIntervalNumber::Seventh => OrderedPitchClassInterval::Seventh(
+            OrderedPitchClassIntervalNumber::Seventh => OrderedPitchClassInterval::Seventh(
                 MajorMinorQuality::from_index(pitch_class_number_difference - 10),
             ),
-            PitchClassIntervalNumber::Octave => OrderedPitchClassInterval::DiminishedOctave(
+            OrderedPitchClassIntervalNumber::Octave => OrderedPitchClassInterval::DiminishedOctave(
                 NonZeroUsize::new(
                     12_usize
                         .checked_sub(pitch_class_number_difference as usize)

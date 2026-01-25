@@ -169,7 +169,7 @@ impl Ord for PerfectQuality {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum PitchClassIntervalNumber {
+pub enum OrderedPitchClassIntervalNumber {
     Unison,
     Second,
     Third,
@@ -180,7 +180,7 @@ pub enum PitchClassIntervalNumber {
     Octave,
 }
 
-impl PitchClassIntervalNumber {
+impl OrderedPitchClassIntervalNumber {
     pub fn zero_based(&self) -> usize {
         match self {
             Self::Unison => 0,
@@ -286,16 +286,16 @@ impl OrderedPitchClassInterval {
     pub const DOUBLY_DIMINISHED_OCTAVE: Self =
         Self::DiminishedOctave(NonZeroUsize::new(2).unwrap());
 
-    pub const fn interval_number(&self) -> PitchClassIntervalNumber {
+    pub const fn interval_number(&self) -> OrderedPitchClassIntervalNumber {
         match self {
-            Self::Unison(_) => PitchClassIntervalNumber::Unison,
-            Self::Second(_) => PitchClassIntervalNumber::Second,
-            Self::Third(_) => PitchClassIntervalNumber::Third,
-            Self::Fourth(_) => PitchClassIntervalNumber::Fourth,
-            Self::Fifth(_) => PitchClassIntervalNumber::Fifth,
-            Self::Sixth(_) => PitchClassIntervalNumber::Sixth,
-            Self::Seventh(_) => PitchClassIntervalNumber::Seventh,
-            Self::DiminishedOctave(_) => PitchClassIntervalNumber::Octave,
+            Self::Unison(_) => OrderedPitchClassIntervalNumber::Unison,
+            Self::Second(_) => OrderedPitchClassIntervalNumber::Second,
+            Self::Third(_) => OrderedPitchClassIntervalNumber::Third,
+            Self::Fourth(_) => OrderedPitchClassIntervalNumber::Fourth,
+            Self::Fifth(_) => OrderedPitchClassIntervalNumber::Fifth,
+            Self::Sixth(_) => OrderedPitchClassIntervalNumber::Sixth,
+            Self::Seventh(_) => OrderedPitchClassIntervalNumber::Seventh,
+            Self::DiminishedOctave(_) => OrderedPitchClassIntervalNumber::Octave,
         }
     }
 }
