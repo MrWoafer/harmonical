@@ -1,7 +1,8 @@
 use crate::{
     intervals::{
-        IntervalDirection, MajorMinorIntervalQuality, OrderedPitchInterval, PerfectIntervalQuality,
-        UnorderedPitchInterval, UnorderedSimplePitchInterval,
+        IntervalDirection, MajorMinorIntervalQuality, OrderedPitchClassInterval,
+        OrderedPitchInterval, PerfectIntervalQuality, UnorderedPitchInterval,
+        UnorderedSimplePitchInterval,
     },
     pitches::Pitch,
 };
@@ -59,35 +60,52 @@ pub trait SemitonesTET12 {
     fn semitones_tet12(&self) -> Self::Semitones;
 }
 
+fn semitones_tet12_offset_major_minor(quality: &MajorMinorIntervalQuality) -> isize {
+    match quality {
+        MajorMinorIntervalQuality::Augmented(times) => times.get() as isize,
+        MajorMinorIntervalQuality::Major => 0,
+        MajorMinorIntervalQuality::Minor => -1,
+        MajorMinorIntervalQuality::Diminished(times) => -1 - (times.get() as isize),
+    }
+}
+
+fn semitones_tet12_offset_perfect(quality: &PerfectIntervalQuality) -> isize {
+    match quality {
+        PerfectIntervalQuality::Augmented(times) => times.get() as isize,
+        PerfectIntervalQuality::Perfect => 0,
+        PerfectIntervalQuality::Diminished(times) => -(times.get() as isize),
+    }
+}
+
+impl SemitonesTET12 for OrderedPitchClassInterval {
+    type Semitones = isize;
+
+    fn semitones_tet12(&self) -> Self::Semitones {
+        match self {
+            Self::Unison(quality) => 0 + semitones_tet12_offset_perfect(quality),
+            Self::Second(quality) => 2 + semitones_tet12_offset_major_minor(quality),
+            Self::Third(quality) => 4 + semitones_tet12_offset_major_minor(quality),
+            Self::Fourth(quality) => 5 + semitones_tet12_offset_perfect(quality),
+            Self::Fifth(quality) => 7 + semitones_tet12_offset_perfect(quality),
+            Self::Sixth(quality) => 9 + semitones_tet12_offset_major_minor(quality),
+            Self::Seventh(quality) => 11 + semitones_tet12_offset_major_minor(quality),
+            Self::DiminishedOctave(times) => 12 - times.get() as isize,
+        }
+    }
+}
+
 impl SemitonesTET12 for UnorderedSimplePitchInterval {
     type Semitones = isize;
 
     fn semitones_tet12(&self) -> Self::Semitones {
-        fn offset_major_minor(quality: &MajorMinorIntervalQuality) -> isize {
-            match quality {
-                MajorMinorIntervalQuality::Augmented(times) => times.get() as isize,
-                MajorMinorIntervalQuality::Major => 0,
-                MajorMinorIntervalQuality::Minor => -1,
-                MajorMinorIntervalQuality::Diminished(times) => -1 - (times.get() as isize),
-            }
-        }
-
-        fn offset_perfect(quality: &PerfectIntervalQuality) -> isize {
-            match quality {
-                PerfectIntervalQuality::Augmented(times) => times.get() as isize,
-                PerfectIntervalQuality::Perfect => 0,
-                PerfectIntervalQuality::Diminished(times) => -(times.get() as isize),
-            }
-        }
-
         match self {
-            Self::Unison(quality) => 0 + offset_perfect(quality),
-            Self::Second(quality) => 2 + offset_major_minor(quality),
-            Self::Third(quality) => 4 + offset_major_minor(quality),
-            Self::Fourth(quality) => 5 + offset_perfect(quality),
-            Self::Fifth(quality) => 7 + offset_perfect(quality),
-            Self::Sixth(quality) => 9 + offset_major_minor(quality),
-            Self::Seventh(quality) => 11 + offset_major_minor(quality),
+            Self::Unison(quality) => 0 + semitones_tet12_offset_perfect(quality),
+            Self::Second(quality) => 2 + semitones_tet12_offset_major_minor(quality),
+            Self::Third(quality) => 4 + semitones_tet12_offset_major_minor(quality),
+            Self::Fourth(quality) => 5 + semitones_tet12_offset_perfect(quality),
+            Self::Fifth(quality) => 7 + semitones_tet12_offset_perfect(quality),
+            Self::Sixth(quality) => 9 + semitones_tet12_offset_major_minor(quality),
+            Self::Seventh(quality) => 11 + semitones_tet12_offset_major_minor(quality),
         }
     }
 }

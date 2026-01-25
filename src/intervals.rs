@@ -3,6 +3,8 @@ use std::{fmt::Display, num::NonZeroUsize, ops::Neg};
 use num2words::Num2Words;
 use paste::paste;
 
+use crate::{enharmonic::Enharmonic, tuning::TET12};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MajorMinorIntervalQuality {
     Major,
@@ -483,6 +485,12 @@ impl OrderedPitchClassInterval {
     }
 }
 
+impl Enharmonic for OrderedPitchClassInterval {
+    fn enharmonic(&self, other: &Self) -> bool {
+        TET12::semitones(self) == TET12::semitones(other)
+    }
+}
+
 impl Display for OrderedPitchClassInterval {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if f.alternate() {
@@ -669,6 +677,12 @@ impl UnorderedSimplePitchInterval {
             Self::Sixth(quality) => Self::Sixth(quality.diminish()),
             Self::Seventh(quality) => Self::Seventh(quality.diminish()),
         }
+    }
+}
+
+impl Enharmonic for UnorderedSimplePitchInterval {
+    fn enharmonic(&self, other: &Self) -> bool {
+        TET12::semitones(self) == TET12::semitones(other)
     }
 }
 
@@ -991,6 +1005,12 @@ impl UnorderedPitchInterval {
     }
 }
 
+impl Enharmonic for UnorderedPitchInterval {
+    fn enharmonic(&self, other: &Self) -> bool {
+        TET12::semitones(self) == TET12::semitones(other)
+    }
+}
+
 impl From<UnorderedSimplePitchInterval> for UnorderedPitchInterval {
     fn from(simple: UnorderedSimplePitchInterval) -> Self {
         Self { octaves: 0, simple }
@@ -1215,6 +1235,12 @@ impl Ord for OrderedPitchInterval {
     }
 }
 
+impl Enharmonic for OrderedPitchInterval {
+    fn enharmonic(&self, other: &Self) -> bool {
+        TET12::semitones(self) == TET12::semitones(other)
+    }
+}
+
 impl Neg for OrderedPitchInterval {
     type Output = Self;
 
@@ -1255,6 +1281,8 @@ impl Display for OrderedPitchInterval {
 #[cfg(test)]
 mod tests {
     use quickcheck_macros::quickcheck;
+
+    use crate::{assert_enharmonic, assert_not_enharmonic, pitches::Pitch};
 
     use super::*;
 
@@ -1513,5 +1541,109 @@ mod tests {
             ),
             "descending 4x diminished second"
         );
+    }
+
+    #[quickcheck]
+    fn ordered_pitch_interval_enharmonic_examples() {
+        assert_enharmonic!(
+            UnorderedPitchInterval::PERFECT_UNISON.ascending(),
+            UnorderedPitchInterval::PERFECT_UNISON.ascending()
+        );
+
+        assert_enharmonic!(
+            UnorderedPitchInterval::AUGMENTED_THIRD.ascending(),
+            UnorderedPitchInterval::PERFECT_FOURTH.ascending()
+        );
+
+        assert_enharmonic!(
+            UnorderedPitchInterval::DOUBLY_DIMINISHED_SECOND.ascending(),
+            UnorderedPitchInterval::MINOR_SECOND.descending()
+        );
+
+        assert_enharmonic!(
+            UnorderedPitchInterval::AUGMENTED_FOURTH.descending(),
+            UnorderedPitchInterval::DIMINISHED_FIFTH.descending()
+        );
+
+        assert_enharmonic!(
+            UnorderedPitchInterval::DOUBLY_AUGMENTED_SEVENTH.ascending(),
+            UnorderedPitchInterval::AUGMENTED_OCTAVE.ascending()
+        );
+
+        assert_not_enharmonic!(
+            UnorderedPitchInterval::PERFECT_UNISON.ascending(),
+            UnorderedPitchInterval::PERFECT_OCTAVE.ascending()
+        );
+
+        assert_not_enharmonic!(
+            UnorderedPitchInterval::MAJOR_THIRD.ascending(),
+            UnorderedPitchInterval::MAJOR_THIRD.descending()
+        );
+    }
+
+    #[quickcheck]
+    fn ordered_pitch_interval_enharmonic_to_self(interval: OrderedPitchInterval) {
+        assert_enharmonic!(interval, interval);
+    }
+
+    #[quickcheck]
+    fn ordered_pitch_interval_eq_implies_enharmonic(
+        a: OrderedPitchInterval,
+        b: OrderedPitchInterval,
+    ) {
+        if a == b {
+            assert_enharmonic!(a, b);
+        }
+    }
+
+    #[quickcheck]
+    fn ordered_pitch_interval_enharmonic_augment_invariant(
+        a: OrderedPitchInterval,
+        b: OrderedPitchInterval,
+    ) {
+        match (a.direction, b.direction) {
+            (IntervalDirection::Descending, IntervalDirection::Descending)
+            | (IntervalDirection::Ascending, IntervalDirection::Ascending) => {
+                assert_eq!(a.enharmonic(&b), a.augment().enharmonic(&b.augment()));
+            }
+            (IntervalDirection::Descending, IntervalDirection::Ascending) => {
+                assert_eq!(a.enharmonic(&b), a.diminish().enharmonic(&b.augment()));
+            }
+            (IntervalDirection::Ascending, IntervalDirection::Descending) => {
+                assert_eq!(a.enharmonic(&b), a.augment().enharmonic(&b.diminish()));
+            }
+        }
+    }
+
+    #[quickcheck]
+    fn ordered_pitch_interval_enharmonic_diminish_invariant(
+        a: OrderedPitchInterval,
+        b: OrderedPitchInterval,
+    ) {
+        match (a.direction, b.direction) {
+            (IntervalDirection::Descending, IntervalDirection::Descending)
+            | (IntervalDirection::Ascending, IntervalDirection::Ascending) => {
+                assert_eq!(a.enharmonic(&b), a.diminish().enharmonic(&b.diminish()));
+            }
+            (IntervalDirection::Descending, IntervalDirection::Ascending) => {
+                assert_eq!(a.enharmonic(&b), a.augment().enharmonic(&b.diminish()));
+            }
+            (IntervalDirection::Ascending, IntervalDirection::Descending) => {
+                assert_eq!(a.enharmonic(&b), a.diminish().enharmonic(&b.augment()));
+            }
+        }
+    }
+
+    #[quickcheck]
+    fn pitch_sub_preserves_enharmonic_equivalence(a1: Pitch, a2: Pitch, b1: Pitch, b2: Pitch) {
+        match (a1.enharmonic(&a2), b1.enharmonic(&b2)) {
+            (true, true) => {
+                assert_enharmonic!(a1 - b1, a2 - b2);
+            }
+            (true, false) | (false, true) => {
+                assert_not_enharmonic!(a1 - b1, a2 - b2);
+            }
+            (false, false) => {}
+        }
     }
 }
