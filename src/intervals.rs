@@ -402,6 +402,19 @@ impl OrderedPitchClassInterval {
             Self::DiminishedOctave(_) => OrderedPitchClassIntervalNumber::Octave,
         }
     }
+
+    pub fn quality(&self) -> IntervalQuality {
+        match self {
+            Self::Unison(quality) | Self::Fourth(quality) | Self::Fifth(quality) => {
+                (*quality).into()
+            }
+            Self::Second(quality)
+            | Self::Third(quality)
+            | Self::Sixth(quality)
+            | Self::Seventh(quality) => (*quality).into(),
+            Self::DiminishedOctave(times) => IntervalQuality::Diminished(*times),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -523,6 +536,18 @@ impl UnorderedSimplePitchInterval {
             Self::Fifth(_) => UnorderedSimplePitchIntervalNumber::Fifth,
             Self::Sixth(_) => UnorderedSimplePitchIntervalNumber::Sixth,
             Self::Seventh(_) => UnorderedSimplePitchIntervalNumber::Seventh,
+        }
+    }
+
+    pub fn quality(&self) -> IntervalQuality {
+        match self {
+            Self::Unison(quality) | Self::Fourth(quality) | Self::Fifth(quality) => {
+                (*quality).into()
+            }
+            Self::Second(quality)
+            | Self::Third(quality)
+            | Self::Sixth(quality)
+            | Self::Seventh(quality) => (*quality).into(),
         }
     }
 
@@ -795,6 +820,10 @@ impl UnorderedPitchInterval {
         }
     }
 
+    pub fn quality(&self) -> IntervalQuality {
+        self.simple.quality()
+    }
+
     pub const fn ascending(self) -> OrderedPitchInterval {
         OrderedPitchInterval {
             direction: IntervalDirection::Ascending,
@@ -874,6 +903,10 @@ impl OrderedPitchInterval {
             direction: *direction,
             unordered: unordered.interval_number(),
         }
+    }
+
+    pub fn quality(&self) -> IntervalQuality {
+        self.unordered.quality()
     }
 
     pub const fn augment(self) -> Self {
