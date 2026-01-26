@@ -464,10 +464,14 @@ impl Sub for Pitch {
             std::cmp::Ordering::Equal | std::cmp::Ordering::Greater => IntervalDirection::Ascending,
         };
 
-        let pitch_number = self.pitch_number();
-        let rhs_pitch_number = rhs.pitch_number();
+        fn letter_pitch_number(pitch: &Pitch) -> isize {
+            pitch.octave * 7 + pitch.letter().index_in_octave() as isize
+        }
 
-        let octaves = pitch_number.abs_diff(rhs_pitch_number) / 12;
+        let self_letter_pitch_number = letter_pitch_number(&self);
+        let rhs_letter_pitch_number = letter_pitch_number(&rhs);
+
+        let octaves = self_letter_pitch_number.abs_diff(rhs_letter_pitch_number) / 7;
 
         let pitch_class_interval = match direction {
             IntervalDirection::Ascending => self.class - rhs.class,
@@ -673,7 +677,7 @@ mod tests {
         assert_eq!(
             Pitch::Cbb5 - Pitch::Cx4,
             UnorderedPitchInterval {
-                octaves: 0,
+                octaves: 1,
                 simple: UnorderedSimplePitchInterval::Unison(PerfectIntervalQuality::Diminished(
                     NonZeroUsize::new(4).unwrap()
                 ))
