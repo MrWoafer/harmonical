@@ -493,11 +493,13 @@ impl Enharmonic for OrderedPitchClassInterval {
 
 impl Display for OrderedPitchClassInterval {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.quality().fmt(f)?;
+
         if f.alternate() {
-            write!(f, "{:#} {:#}", self.quality(), self.interval_number())
-        } else {
-            write!(f, "{}{}", self.quality(), self.interval_number())
+            " ".fmt(f)?;
         }
+
+        self.interval_number().fmt(f)
     }
 }
 
@@ -688,11 +690,13 @@ impl Enharmonic for UnorderedSimplePitchInterval {
 
 impl Display for UnorderedSimplePitchInterval {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.quality().fmt(f)?;
+
         if f.alternate() {
-            write!(f, "{:#} {:#}", self.quality(), self.interval_number())
-        } else {
-            write!(f, "{}{}", self.quality(), self.interval_number())
+            " ".fmt(f)?;
         }
+
+        self.interval_number().fmt(f)
     }
 }
 
@@ -1019,11 +1023,13 @@ impl From<UnorderedSimplePitchInterval> for UnorderedPitchInterval {
 
 impl Display for UnorderedPitchInterval {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.quality().fmt(f)?;
+
         if f.alternate() {
-            write!(f, "{:#} {:#}", self.quality(), self.interval_number())
-        } else {
-            write!(f, "{}{}", self.quality(), self.interval_number())
+            " ".fmt(f)?;
         }
+
+        self.interval_number().fmt(f)
     }
 }
 
@@ -1073,11 +1079,13 @@ impl Display for OrderedPitchIntervalNumber {
             unordered,
         } = self;
 
+        direction.fmt(f)?;
+
         if f.alternate() {
-            write!(f, "{:#} {:#}", direction, unordered)
-        } else {
-            write!(f, "{}{}", direction, unordered)
+            " ".fmt(f)?;
         }
+
+        unordered.fmt(f)
     }
 }
 
