@@ -77,80 +77,82 @@ impl Sub for Letter {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Accidental {
-    DoubleFlat,
-    Flat,
+    Flat(NonZeroUsize),
     Natural,
-    Sharp,
-    DoubleSharp,
+    Sharp(NonZeroUsize),
 }
 
 impl Accidental {
     fn index(&self) -> isize {
         match self {
-            Self::DoubleSharp => 2,
-            Self::Sharp => 1,
+            Self::Sharp(times) => times.get() as isize,
             Self::Natural => 0,
-            Self::Flat => -1,
-            Self::DoubleFlat => -2,
+            Self::Flat(times) => -(times.get() as isize),
         }
     }
 
-    fn try_from_index(index: isize) -> Result<Self, ()> {
-        match index {
-            2 => Ok(Self::DoubleSharp),
-            1 => Ok(Self::Sharp),
-            0 => Ok(Self::Natural),
-            -1 => Ok(Self::Flat),
-            -2 => Ok(Self::DoubleFlat),
-            _ => Err(()),
+    pub const fn sharpen(self) -> Self {
+        match self {
+            Self::Sharp(times) => Self::Sharp(times.checked_add(1).expect(
+                "realistically something shouldn't be sharpened enough times for an overflow to \
+                occur",
+            )),
+            Self::Natural => Self::Sharp(NonZeroUsize::new(1).unwrap()),
+            Self::Flat(times) => match times.get() {
+                0 => unreachable!(),
+                1 => Self::Natural,
+                times @ 2.. => {
+                    Self::Flat(NonZeroUsize::new(times - 1).expect("should be non-zero"))
+                }
+            },
         }
     }
 
-    pub fn try_sharpen(self) -> Result<Self, ()> {
-        Self::try_from_index(self.index() + 1)
+    pub const fn flatten(self) -> Self {
+        match self {
+            Self::Sharp(times) => match times.get() {
+                0 => unreachable!(),
+                1 => Self::Natural,
+                times @ 2.. => {
+                    Self::Sharp(NonZeroUsize::new(times - 1).expect("should be non-zero"))
+                }
+            },
+            Self::Natural => Self::Flat(NonZeroUsize::new(1).unwrap()),
+            Self::Flat(times) => Self::Flat(times.checked_add(1).expect(
+                "realistically something shouldn't be flattened enough times for an overflow to \
+                occur",
+            )),
+        }
     }
+}
 
-    #[track_caller]
-    pub fn sharpen(self) -> Self {
-        self.try_sharpen().expect(&format!(
-            "cannot sharpen {:?} as it cannot be represented by the type",
-            self
-        ))
+impl PartialOrd for Accidental {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
+}
 
-    pub fn try_flatten(self) -> Result<Self, ()> {
-        Self::try_from_index(self.index() - 1)
-    }
-
-    #[track_caller]
-    pub fn flatten(self) -> Self {
-        self.try_flatten().expect(&format!(
-            "cannot flatten {:?} as it cannot be represented by the type",
-            self
-        ))
+impl Ord for Accidental {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.index().cmp(&other.index())
     }
 }
 
 impl Display for Accidental {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Accidental::DoubleSharp => "x",
-                Accidental::Sharp => "#",
-                Accidental::Natural =>
-                    if f.alternate() {
-                        "♮"
-                    } else {
-                        ""
-                    },
-                Accidental::Flat => "b",
-                Accidental::DoubleFlat => "bb",
+        match self {
+            Accidental::Sharp(times) => {
+                if times.get() % 2 == 1 {
+                    write!(f, "#")?;
+                }
+
+                write!(f, "{}", "x".repeat(times.get() / 2))
             }
-        )
+            Accidental::Natural => write!(f, "{}", if f.alternate() { "♮" } else { "" }),
+            Accidental::Flat(times) => write!(f, "{}", "b".repeat(times.get())),
+        }
     }
 }
 
@@ -166,12 +168,12 @@ macro_rules! make_pitch_class_consts {
             #[expect(non_upper_case_globals)]
             pub const [<$letter x>]: Self = Self {
                 letter: Letter::$letter,
-                accidental: Accidental::DoubleSharp,
+                accidental: Accidental::Sharp(NonZeroUsize::new(2).unwrap()),
             };
             #[expect(non_upper_case_globals)]
             pub const [<$letter s>]: Self = Self {
                 letter: Letter::$letter,
-                accidental: Accidental::Sharp,
+                accidental: Accidental::Sharp(NonZeroUsize::new(1).unwrap()),
             };
             pub const $letter: Self = Self {
                 letter: Letter::$letter,
@@ -180,12 +182,12 @@ macro_rules! make_pitch_class_consts {
             #[expect(non_upper_case_globals)]
             pub const [<$letter b>]: Self = Self {
                 letter: Letter::$letter,
-                accidental: Accidental::Flat,
+                accidental: Accidental::Flat(NonZeroUsize::new(1).unwrap()),
             };
             #[expect(non_upper_case_globals)]
             pub const [<$letter bb>]: Self = Self {
                 letter: Letter::$letter,
-                accidental: Accidental::DoubleFlat,
+                accidental: Accidental::Flat(NonZeroUsize::new(2).unwrap()),
             };
         }
     };
@@ -200,16 +202,7 @@ impl PitchClass {
     make_pitch_class_consts!(F);
     make_pitch_class_consts!(G);
 
-    pub fn try_sharpen(self) -> Result<Self, ()> {
-        let Self { letter, accidental } = self;
-
-        accidental
-            .try_sharpen()
-            .map(|accidental| Self { letter, accidental })
-    }
-
-    #[track_caller]
-    pub fn sharpen(self) -> Self {
+    pub const fn sharpen(self) -> Self {
         let Self { letter, accidental } = self;
 
         Self {
@@ -218,16 +211,7 @@ impl PitchClass {
         }
     }
 
-    pub fn try_flatten(self) -> Result<Self, ()> {
-        let Self { letter, accidental } = self;
-
-        accidental
-            .try_flatten()
-            .map(|accidental| Self { letter, accidental })
-    }
-
-    #[track_caller]
-    pub fn flatten(self) -> Self {
+    pub const fn flatten(self) -> Self {
         let Self { letter, accidental } = self;
 
         Self {
@@ -236,25 +220,25 @@ impl PitchClass {
         }
     }
 
-    fn pitch_class_number(&self) -> usize {
+    fn pitch_class_number(&self) -> isize {
         let Self { letter, accidental } = self;
 
-        (match letter {
-            Letter::C => 0,
-            Letter::D => 2,
-            Letter::E => 4,
-            Letter::F => 5,
-            Letter::G => 7,
-            Letter::A => 9,
-            Letter::B => 11,
-        } + accidental.index())
-        .rem_euclid(12) as usize
+        accidental.index()
+            + match letter {
+                Letter::C => 0,
+                Letter::D => 2,
+                Letter::E => 4,
+                Letter::F => 5,
+                Letter::G => 7,
+                Letter::A => 9,
+                Letter::B => 11,
+            }
     }
 }
 
 impl Enharmonic for PitchClass {
     fn enharmonic(&self, other: &Self) -> bool {
-        self.pitch_class_number() == other.pitch_class_number()
+        self.pitch_class_number().rem_euclid(12) == other.pitch_class_number().rem_euclid(12)
     }
 }
 
@@ -278,10 +262,18 @@ impl Sub for PitchClass {
 
         let pitch_class_number_difference = if self.pitch_class_number() >= rhs.pitch_class_number()
         {
-            self.pitch_class_number() - rhs.pitch_class_number()
+            self.pitch_class_number() as isize - rhs.pitch_class_number() as isize
         } else {
-            self.pitch_class_number() + 12 - rhs.pitch_class_number()
-        } as isize;
+            self.pitch_class_number() as isize + 12 - rhs.pitch_class_number() as isize
+        };
+
+        println!(
+            "{}: {}, {}: {}",
+            self,
+            self.pitch_class_number(),
+            rhs,
+            rhs.pitch_class_number()
+        );
 
         match interval_number {
             OrderedPitchClassIntervalNumber::Unison => OrderedPitchClassInterval::Unison(
@@ -307,8 +299,7 @@ impl Sub for PitchClass {
             ),
             OrderedPitchClassIntervalNumber::Octave => OrderedPitchClassInterval::DiminishedOctave(
                 NonZeroUsize::new(
-                    12_usize
-                        .checked_sub(pitch_class_number_difference as usize)
+                    usize::try_from(12 - pitch_class_number_difference)
                         .expect("pitch class number difference should be <= 11"),
                 )
                 .expect("pitch class number difference should be <= 11"),
@@ -370,14 +361,7 @@ impl Pitch {
         self.class.accidental
     }
 
-    pub fn try_sharpen(self) -> Result<Self, ()> {
-        let Self { class, octave } = self;
-
-        class.try_sharpen().map(|class| Self { class, octave })
-    }
-
-    #[track_caller]
-    pub fn sharpen(self) -> Self {
+    pub const fn sharpen(self) -> Self {
         let Self { class, octave } = self;
 
         Self {
@@ -386,14 +370,7 @@ impl Pitch {
         }
     }
 
-    pub fn try_flatten(self) -> Result<Self, ()> {
-        let Self { class, octave } = self;
-
-        class.try_flatten().map(|class| Self { class, octave })
-    }
-
-    #[track_caller]
-    pub fn flatten(self) -> Self {
+    pub const fn flatten(self) -> Self {
         let Self { class, octave } = self;
 
         Self {
@@ -540,6 +517,24 @@ mod tests {
             .to_string(),
             "C#-2"
         );
+
+        assert_eq!(
+            PitchClass {
+                letter: Letter::C,
+                accidental: Accidental::Sharp(NonZeroUsize::new(4).unwrap())
+            }
+            .to_string(),
+            "Cxx"
+        );
+
+        assert_eq!(
+            PitchClass {
+                letter: Letter::C,
+                accidental: Accidental::Sharp(NonZeroUsize::new(5).unwrap())
+            }
+            .to_string(),
+            "C#xx"
+        );
     }
 
     #[test]
@@ -548,8 +543,6 @@ mod tests {
         assert_eq!(Pitch::B2.sharpen(), Pitch::Bs2);
         assert_eq!(Pitch::Cb1.sharpen(), Pitch::C1);
         assert_eq!(Pitch::Dbb0.sharpen(), Pitch::Db0);
-
-        assert_eq!(Pitch::Ex5.try_sharpen(), Err(()));
     }
 
     #[test]
@@ -559,8 +552,6 @@ mod tests {
         assert_eq!(Pitch::G6.flatten(), Pitch::Gb6);
         assert_eq!(Pitch::Ab5.flatten(), Pitch::Abb5);
         assert_eq!(Pitch::C0.flatten(), Pitch::Cb0);
-
-        assert_eq!(Pitch::Bbb2.try_flatten(), Err(()));
     }
 
     #[test]
@@ -608,20 +599,12 @@ mod tests {
 
     #[quickcheck]
     fn pitch_class_sub_sharpen_invariant(a: PitchClass, b: PitchClass) {
-        if let Ok(a_sharpened) = a.try_sharpen()
-            && let Ok(b_sharpened) = b.try_sharpen()
-        {
-            assert_eq!(a - b, a_sharpened - b_sharpened)
-        }
+        assert_eq!(a - b, a.sharpen() - b.sharpen())
     }
 
     #[quickcheck]
     fn pitch_class_sub_flatten_invariant(a: PitchClass, b: PitchClass) {
-        if let Ok(a_flattened) = a.try_flatten()
-            && let Ok(b_flattened) = b.try_flatten()
-        {
-            assert_eq!(a - b, a_flattened - b_flattened)
-        }
+        assert_eq!(a - b, a.flatten() - b.flatten())
     }
 
     #[test]
@@ -709,20 +692,12 @@ mod tests {
 
     #[quickcheck]
     fn pitch_sub_sharpen_invariant(a: Pitch, b: Pitch) {
-        if let Ok(a_sharpened) = a.try_sharpen()
-            && let Ok(b_sharpened) = b.try_sharpen()
-        {
-            assert_eq!(a - b, a_sharpened - b_sharpened);
-        }
+        assert_eq!(a - b, a.sharpen() - b.sharpen());
     }
 
     #[quickcheck]
     fn pitch_sub_flatten_invariant(a: Pitch, b: Pitch) {
-        if let Ok(a_flattened) = a.try_flatten()
-            && let Ok(b_flattened) = b.try_flatten()
-        {
-            assert_eq!(a - b, a_flattened - b_flattened);
-        }
+        assert_eq!(a - b, a.flatten() - b.flatten());
     }
 
     #[quickcheck]
@@ -792,20 +767,12 @@ mod tests {
 
     #[quickcheck]
     fn pitch_enharmonic_sharpen_invariant(a: Pitch, b: Pitch) {
-        if let Ok(a_sharpened) = a.try_sharpen()
-            && let Ok(b_sharpened) = b.try_sharpen()
-        {
-            assert_eq!(a.enharmonic(&b), a_sharpened.enharmonic(&b_sharpened));
-        }
+        assert_eq!(a.enharmonic(&b), a.sharpen().enharmonic(&b.sharpen()));
     }
 
     #[quickcheck]
     fn pitch_enharmonic_flatten_invariant(a: Pitch, b: Pitch) {
-        if let Ok(a_flattened) = a.try_flatten()
-            && let Ok(b_flattened) = b.try_flatten()
-        {
-            assert_eq!(a.enharmonic(&b), a_flattened.enharmonic(&b_flattened));
-        }
+        assert_eq!(a.enharmonic(&b), a.flatten().enharmonic(&b.flatten()));
     }
 
     #[quickcheck]

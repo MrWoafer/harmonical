@@ -31,14 +31,17 @@ impl Arbitrary for Letter {
 
 impl Arbitrary for Accidental {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
-        *g.choose(&[
-            Self::DoubleSharp,
-            Self::Sharp,
+        let choices = &[
+            Self::Sharp(
+                NonZeroUsize::new(usize::arbitrary(g) % 100 + 1).expect("should be non-zero"),
+            ),
             Self::Natural,
-            Self::Flat,
-            Self::DoubleFlat,
-        ])
-        .expect("the list is non-empty")
+            Self::Flat(
+                NonZeroUsize::new(usize::arbitrary(g) % 100 + 1).expect("should be non-zero"),
+            ),
+        ];
+
+        *g.choose(choices).expect("the list is non-empty")
     }
 }
 
