@@ -1,8 +1,7 @@
 use crate::{
     intervals::{
-        IntervalDirection, MajorMinorIntervalQuality, OrderedPitchClassInterval,
-        OrderedPitchInterval, PerfectIntervalQuality, UnorderedPitchInterval,
-        UnorderedSimplePitchInterval,
+        IntervalDirection, MajorMinorIntervalQuality, OrderedPitchInterval, PerfectIntervalQuality,
+        UnorderedPitchInterval, UnorderedSimplePitchInterval,
     },
     pitches::Pitch,
 };
@@ -74,23 +73,6 @@ fn semitones_tet12_offset_perfect(quality: &PerfectIntervalQuality) -> isize {
         PerfectIntervalQuality::Augmented(times) => times.get() as isize,
         PerfectIntervalQuality::Perfect => 0,
         PerfectIntervalQuality::Diminished(times) => -(times.get() as isize),
-    }
-}
-
-impl SemitonesTET12 for OrderedPitchClassInterval {
-    type Semitones = isize;
-
-    fn semitones_tet12(&self) -> Self::Semitones {
-        match self {
-            Self::AugmentedUnison(times) => *times as isize,
-            Self::Second(quality) => 2 + semitones_tet12_offset_major_minor(quality),
-            Self::Third(quality) => 4 + semitones_tet12_offset_major_minor(quality),
-            Self::Fourth(quality) => 5 + semitones_tet12_offset_perfect(quality),
-            Self::Fifth(quality) => 7 + semitones_tet12_offset_perfect(quality),
-            Self::Sixth(quality) => 9 + semitones_tet12_offset_major_minor(quality),
-            Self::Seventh(quality) => 11 + semitones_tet12_offset_major_minor(quality),
-            Self::DiminishedOctave(times) => 12 - times.get() as isize,
-        }
     }
 }
 

@@ -6,8 +6,7 @@ use quickcheck::Arbitrary;
 
 use crate::{
     intervals::{
-        IntervalDirection, MajorMinorIntervalQuality, OrderedPitchClassInterval,
-        OrderedPitchClassIntervalNumber, OrderedPitchInterval, PerfectIntervalQuality,
+        IntervalDirection, MajorMinorIntervalQuality, OrderedPitchInterval, PerfectIntervalQuality,
         UnorderedPitchInterval, UnorderedPitchIntervalNumber, UnorderedSimplePitchInterval,
         UnorderedSimplePitchIntervalNumber,
     },
@@ -93,41 +92,6 @@ impl Arbitrary for PerfectIntervalQuality {
         ];
 
         *g.choose(choices).expect("the list is non-empty")
-    }
-}
-
-impl Arbitrary for OrderedPitchClassIntervalNumber {
-    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
-        *g.choose(&[
-            Self::Unison,
-            Self::Second,
-            Self::Third,
-            Self::Fourth,
-            Self::Fifth,
-            Self::Sixth,
-            Self::Seventh,
-            Self::Octave,
-        ])
-        .expect("the list is non-empty")
-    }
-}
-
-impl Arbitrary for OrderedPitchClassInterval {
-    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
-        match OrderedPitchClassIntervalNumber::arbitrary(g) {
-            OrderedPitchClassIntervalNumber::Unison => {
-                Self::AugmentedUnison(usize::arbitrary(g) % 100)
-            }
-            OrderedPitchClassIntervalNumber::Second => Self::Second(Arbitrary::arbitrary(g)),
-            OrderedPitchClassIntervalNumber::Third => Self::Third(Arbitrary::arbitrary(g)),
-            OrderedPitchClassIntervalNumber::Fourth => Self::Fourth(Arbitrary::arbitrary(g)),
-            OrderedPitchClassIntervalNumber::Fifth => Self::Fifth(Arbitrary::arbitrary(g)),
-            OrderedPitchClassIntervalNumber::Sixth => Self::Sixth(Arbitrary::arbitrary(g)),
-            OrderedPitchClassIntervalNumber::Seventh => Self::Seventh(Arbitrary::arbitrary(g)),
-            OrderedPitchClassIntervalNumber::Octave => Self::DiminishedOctave(
-                NonZeroUsize::new(usize::arbitrary(g) % 100 + 1).expect("should be non-zero"),
-            ),
-        }
     }
 }
 
