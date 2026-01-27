@@ -730,6 +730,11 @@ mod tests {
         assert_eq!(a - b, a.octave_up() - b.octave_up());
     }
 
+    #[quickcheck]
+    fn pitch_sub_anticommutative(a: Pitch, b: Pitch) {
+        assert_eq!(a - b, -(b - a));
+    }
+
     #[test]
     fn pitch_class_enharmonic_examples() {
         assert_enharmonic!(PitchClass::A, PitchClass::A);
