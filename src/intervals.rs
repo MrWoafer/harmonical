@@ -392,7 +392,7 @@ impl Display for OrderedPitchClassIntervalNumber {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum OrderedPitchClassInterval {
     Unison(PerfectIntervalQuality),
     Second(MajorMinorIntervalQuality),
@@ -482,6 +482,34 @@ impl OrderedPitchClassInterval {
             | Self::Seventh(quality) => (*quality).into(),
             Self::DiminishedOctave(times) => IntervalQuality::Diminished(*times),
         }
+    }
+}
+
+impl PartialOrd for OrderedPitchClassInterval {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for OrderedPitchClassInterval {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        fn index(interval: &OrderedPitchClassInterval) -> impl Ord {
+            (
+                interval.interval_number(),
+                match interval {
+                    OrderedPitchClassInterval::Unison(quality) => quality.index(),
+                    OrderedPitchClassInterval::Second(quality) => quality.index(),
+                    OrderedPitchClassInterval::Third(quality) => quality.index(),
+                    OrderedPitchClassInterval::Fourth(quality) => quality.index(),
+                    OrderedPitchClassInterval::Fifth(quality) => quality.index(),
+                    OrderedPitchClassInterval::Sixth(quality) => quality.index(),
+                    OrderedPitchClassInterval::Seventh(quality) => quality.index(),
+                    OrderedPitchClassInterval::DiminishedOctave(times) => -(times.get() as isize),
+                },
+            )
+        }
+
+        index(self).cmp(&index(other))
     }
 }
 
