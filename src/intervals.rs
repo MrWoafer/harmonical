@@ -407,7 +407,7 @@ pub enum OrderedPitchClassInterval {
 macro_rules! make_ordered_pitch_class_interval_consts {
     (Perfect, $number:ident) => {
         paste! {
-            pub const [< DOUBLY_ AUGMENTED_$number:upper >]: Self =
+            pub const [< DOUBLY_AUGMENTED_$number:upper >]: Self =
                 Self::$number(PerfectIntervalQuality::Augmented(NonZeroUsize::new(2).unwrap()));
             pub const [< AUGMENTED_$number:upper >]: Self =
                 Self::$number(PerfectIntervalQuality::Augmented(NonZeroUsize::new(1).unwrap()));
@@ -618,7 +618,7 @@ pub enum UnorderedSimplePitchInterval {
 macro_rules! make_unordered_simple_pitch_interval_consts {
     (Perfect, $number:ident) => {
         paste! {
-            pub const [< DOUBLY_ AUGMENTED_$number:upper >]: Self =
+            pub const [< DOUBLY_AUGMENTED_$number:upper >]: Self =
                 Self::$number(PerfectIntervalQuality::Augmented(NonZeroUsize::new(2).unwrap()));
             pub const [< AUGMENTED_$number:upper >]: Self =
                 Self::$number(PerfectIntervalQuality::Augmented(NonZeroUsize::new(1).unwrap()));
