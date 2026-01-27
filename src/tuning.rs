@@ -82,7 +82,7 @@ impl SemitonesTET12 for OrderedPitchClassInterval {
 
     fn semitones_tet12(&self) -> Self::Semitones {
         match self {
-            Self::Unison(quality) => 0 + semitones_tet12_offset_perfect(quality),
+            Self::AugmentedUnison(times) => *times as isize,
             Self::Second(quality) => 2 + semitones_tet12_offset_major_minor(quality),
             Self::Third(quality) => 4 + semitones_tet12_offset_major_minor(quality),
             Self::Fourth(quality) => 5 + semitones_tet12_offset_perfect(quality),

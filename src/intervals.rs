@@ -394,7 +394,7 @@ impl Display for OrderedPitchClassIntervalNumber {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum OrderedPitchClassInterval {
-    Unison(PerfectIntervalQuality),
+    AugmentedUnison(usize),
     Second(MajorMinorIntervalQuality),
     Third(MajorMinorIntervalQuality),
     Fourth(PerfectIntervalQuality),
@@ -446,7 +446,10 @@ impl OrderedPitchClassInterval {
     #[doc(alias = "WHOLE_STEP")]
     pub const TONE: Self = Self::MAJOR_SECOND;
 
-    make_ordered_pitch_class_interval_consts!(Perfect, Unison);
+    pub const PERFECT_UNISON: Self = Self::AugmentedUnison(0);
+    pub const AUGMENTED_UNISON: Self = Self::AugmentedUnison(1);
+    pub const DOUBLY_AUGMENTED_UNISON: Self = Self::AugmentedUnison(2);
+
     make_ordered_pitch_class_interval_consts!(MajorMinor, Second);
     make_ordered_pitch_class_interval_consts!(MajorMinor, Third);
     make_ordered_pitch_class_interval_consts!(Perfect, Fourth);
@@ -460,7 +463,7 @@ impl OrderedPitchClassInterval {
 
     pub const fn interval_number(&self) -> OrderedPitchClassIntervalNumber {
         match self {
-            Self::Unison(_) => OrderedPitchClassIntervalNumber::Unison,
+            Self::AugmentedUnison(_) => OrderedPitchClassIntervalNumber::Unison,
             Self::Second(_) => OrderedPitchClassIntervalNumber::Second,
             Self::Third(_) => OrderedPitchClassIntervalNumber::Third,
             Self::Fourth(_) => OrderedPitchClassIntervalNumber::Fourth,
@@ -473,13 +476,14 @@ impl OrderedPitchClassInterval {
 
     pub fn quality(&self) -> IntervalQuality {
         match self {
-            Self::Unison(quality) | Self::Fourth(quality) | Self::Fifth(quality) => {
-                (*quality).into()
-            }
+            Self::AugmentedUnison(times) => NonZeroUsize::new(*times)
+                .map(IntervalQuality::Augmented)
+                .unwrap_or(IntervalQuality::Perfect),
             Self::Second(quality)
             | Self::Third(quality)
             | Self::Sixth(quality)
             | Self::Seventh(quality) => (*quality).into(),
+            Self::Fourth(quality) | Self::Fifth(quality) => (*quality).into(),
             Self::DiminishedOctave(times) => IntervalQuality::Diminished(*times),
         }
     }
@@ -497,7 +501,7 @@ impl Ord for OrderedPitchClassInterval {
             (
                 interval.interval_number(),
                 match interval {
-                    OrderedPitchClassInterval::Unison(quality) => quality.index(),
+                    OrderedPitchClassInterval::AugmentedUnison(times) => *times as isize,
                     OrderedPitchClassInterval::Second(quality) => quality.index(),
                     OrderedPitchClassInterval::Third(quality) => quality.index(),
                     OrderedPitchClassInterval::Fourth(quality) => quality.index(),

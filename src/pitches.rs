@@ -276,8 +276,9 @@ impl Sub for PitchClass {
         );
 
         match interval_number {
-            OrderedPitchClassIntervalNumber::Unison => OrderedPitchClassInterval::Unison(
-                PerfectIntervalQuality::from_index(pitch_class_number_difference),
+            OrderedPitchClassIntervalNumber::Unison => OrderedPitchClassInterval::AugmentedUnison(
+                usize::try_from(pitch_class_number_difference)
+                    .expect("pitch class number difference should be >= 0 in this case"),
             ),
             OrderedPitchClassIntervalNumber::Second => OrderedPitchClassInterval::Second(
                 MajorMinorIntervalQuality::from_index(pitch_class_number_difference - 1),
@@ -300,9 +301,9 @@ impl Sub for PitchClass {
             OrderedPitchClassIntervalNumber::Octave => OrderedPitchClassInterval::DiminishedOctave(
                 NonZeroUsize::new(
                     usize::try_from(12 - pitch_class_number_difference)
-                        .expect("pitch class number difference should be <= 11"),
+                        .expect("pitch class number difference should be <= 11 in this case"),
                 )
-                .expect("pitch class number difference should be <= 11"),
+                .expect("pitch class number difference should be <= 11 in this case"),
             ),
         }
     }
@@ -456,8 +457,12 @@ impl Sub for Pitch {
         };
 
         let simple = match pitch_class_interval {
-            OrderedPitchClassInterval::Unison(quality) => {
-                UnorderedSimplePitchInterval::Unison(quality)
+            OrderedPitchClassInterval::AugmentedUnison(times) => {
+                UnorderedSimplePitchInterval::Unison(
+                    NonZeroUsize::new(times)
+                        .map(PerfectIntervalQuality::Augmented)
+                        .unwrap_or(PerfectIntervalQuality::Perfect),
+                )
             }
             OrderedPitchClassInterval::Second(quality) => {
                 UnorderedSimplePitchInterval::Second(quality)

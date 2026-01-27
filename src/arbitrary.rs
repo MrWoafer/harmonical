@@ -115,7 +115,9 @@ impl Arbitrary for OrderedPitchClassIntervalNumber {
 impl Arbitrary for OrderedPitchClassInterval {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         match OrderedPitchClassIntervalNumber::arbitrary(g) {
-            OrderedPitchClassIntervalNumber::Unison => Self::Unison(Arbitrary::arbitrary(g)),
+            OrderedPitchClassIntervalNumber::Unison => {
+                Self::AugmentedUnison(usize::arbitrary(g) % 100)
+            }
             OrderedPitchClassIntervalNumber::Second => Self::Second(Arbitrary::arbitrary(g)),
             OrderedPitchClassIntervalNumber::Third => Self::Third(Arbitrary::arbitrary(g)),
             OrderedPitchClassIntervalNumber::Fourth => Self::Fourth(Arbitrary::arbitrary(g)),
