@@ -22,7 +22,7 @@ pub enum Letter {
 }
 
 impl Letter {
-    pub const fn index_in_octave(&self) -> usize {
+    pub const fn index_within_octave(&self) -> usize {
         match self {
             Self::C => 0,
             Self::D => 1,
@@ -31,6 +31,18 @@ impl Letter {
             Self::G => 4,
             Self::A => 5,
             Self::B => 6,
+        }
+    }
+
+    pub const fn semitones_within_octave_tet12(&self) -> usize {
+        match self {
+            Self::C => 0,
+            Self::D => 2,
+            Self::E => 4,
+            Self::F => 5,
+            Self::G => 7,
+            Self::A => 9,
+            Self::B => 11,
         }
     }
 }
@@ -65,10 +77,10 @@ impl Sub for Letter {
     type Output = UnorderedSimpleIntervalNumber;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        let interval_number = if self.index_in_octave() >= rhs.index_in_octave() {
-            self.index_in_octave() - rhs.index_in_octave()
+        let interval_number = if self.index_within_octave() >= rhs.index_within_octave() {
+            self.index_within_octave() - rhs.index_within_octave()
         } else {
-            self.index_in_octave() + 7 - rhs.index_in_octave()
+            self.index_within_octave() + 7 - rhs.index_within_octave()
         };
 
         UnorderedSimpleIntervalNumber::try_from_zero_based(interval_number)
@@ -84,7 +96,7 @@ pub enum Accidental {
 }
 
 impl Accidental {
-    fn index(&self) -> isize {
+    fn semitones_tet12(&self) -> isize {
         match self {
             Self::Sharp(times) => times.get() as isize,
             Self::Natural => 0,
@@ -135,7 +147,7 @@ impl PartialOrd for Accidental {
 
 impl Ord for Accidental {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.index().cmp(&other.index())
+        self.semitones_tet12().cmp(&other.semitones_tet12())
     }
 }
 
@@ -219,25 +231,22 @@ impl PitchClass {
         }
     }
 
-    fn pitch_class_number(&self) -> isize {
+    fn semitones_within_octave_tet12_non_wrapping(&self) -> isize {
         let Self { letter, accidental } = self;
 
-        accidental.index()
-            + match letter {
-                Letter::C => 0,
-                Letter::D => 2,
-                Letter::E => 4,
-                Letter::F => 5,
-                Letter::G => 7,
-                Letter::A => 9,
-                Letter::B => 11,
-            }
+        letter.semitones_within_octave_tet12() as isize + accidental.semitones_tet12()
+    }
+
+    fn semitones_within_octave_tet12_wrapping(&self) -> isize {
+        self.semitones_within_octave_tet12_non_wrapping()
+            .rem_euclid(12)
     }
 }
 
 impl Enharmonic for PitchClass {
     fn enharmonic(&self, other: &Self) -> bool {
-        self.pitch_class_number().rem_euclid(12) == other.pitch_class_number().rem_euclid(12)
+        self.semitones_within_octave_tet12_wrapping()
+            == other.semitones_within_octave_tet12_wrapping()
     }
 }
 
@@ -339,29 +348,16 @@ impl Pitch {
         }
     }
 
-    fn pitch_number(&self) -> isize {
-        let Self {
-            octave,
-            class: PitchClass { letter, accidental },
-        } = self;
+    fn semitones_tet12(&self) -> isize {
+        let Self { octave, class } = self;
 
-        octave * 12
-            + match letter {
-                Letter::C => 0,
-                Letter::D => 2,
-                Letter::E => 4,
-                Letter::F => 5,
-                Letter::G => 7,
-                Letter::A => 9,
-                Letter::B => 11,
-            }
-            + accidental.index()
+        octave * 12 + class.semitones_within_octave_tet12_non_wrapping()
     }
 }
 
 impl Enharmonic for Pitch {
     fn enharmonic(&self, other: &Self) -> bool {
-        self.pitch_number() == other.pitch_number()
+        self.semitones_tet12() == other.semitones_tet12()
     }
 }
 
@@ -383,12 +379,12 @@ impl Sub for Pitch {
             std::cmp::Ordering::Equal | std::cmp::Ordering::Greater => IntervalDirection::Ascending,
         };
 
-        fn letter_pitch_number(pitch: &Pitch) -> isize {
-            pitch.octave * 7 + pitch.letter().index_in_octave() as isize
+        fn letter_index(pitch: &Pitch) -> isize {
+            pitch.octave * 7 + pitch.letter().index_within_octave() as isize
         }
 
-        let self_letter_pitch_number = letter_pitch_number(&self);
-        let rhs_letter_pitch_number = letter_pitch_number(&rhs);
+        let self_letter_pitch_number = letter_index(&self);
+        let rhs_letter_pitch_number = letter_index(&rhs);
 
         let octaves = self_letter_pitch_number.abs_diff(rhs_letter_pitch_number) / 7;
 
@@ -398,8 +394,8 @@ impl Sub for Pitch {
         };
 
         let simple_pitch_number_difference = match direction {
-            IntervalDirection::Ascending => self.pitch_number() - rhs.pitch_number(),
-            IntervalDirection::Descending => rhs.pitch_number() - self.pitch_number(),
+            IntervalDirection::Ascending => self.semitones_tet12() - rhs.semitones_tet12(),
+            IntervalDirection::Descending => rhs.semitones_tet12() - self.semitones_tet12(),
         } - 12 * octaves as isize;
 
         let simple = match simple_number {
