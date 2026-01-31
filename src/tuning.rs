@@ -21,7 +21,7 @@ pub struct TET12 {
 
 impl TET12 {
     /// The 12th root of 2.
-    pub const RATIO: f32 = 1.05946309;
+    pub const RATIO: f32 = 1.0594631;
 
     pub const A440: Self = Self { a4_hz: 440.0 };
 
