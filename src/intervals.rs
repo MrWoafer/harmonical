@@ -905,7 +905,7 @@ impl Display for OrderedIntervalNumber {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Eq)]
 pub struct OrderedInterval {
     pub direction: IntervalDirection,
     pub unordered: UnorderedInterval,
