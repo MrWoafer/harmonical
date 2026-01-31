@@ -34,6 +34,19 @@ impl Letter {
         }
     }
 
+    pub const fn try_from_index_within_octave(index: usize) -> Result<Self, ()> {
+        match index {
+            0 => Ok(Self::C),
+            1 => Ok(Self::D),
+            2 => Ok(Self::E),
+            3 => Ok(Self::F),
+            4 => Ok(Self::G),
+            5 => Ok(Self::A),
+            6 => Ok(Self::B),
+            _ => Err(()),
+        }
+    }
+
     pub const fn semitones_within_octave_tet12(&self) -> usize {
         match self {
             Self::C => 0,
@@ -101,6 +114,20 @@ impl Accidental {
             Self::Sharp(times) => times.get() as isize,
             Self::Natural => 0,
             Self::Flat(times) => -(times.get() as isize),
+        }
+    }
+
+    pub(crate) fn from_semitones_tet12(index: isize) -> Self {
+        match index {
+            1.. => Self::Sharp(
+                NonZeroUsize::new(usize::try_from(index).expect("should be non-negative"))
+                    .expect("should non-zero"),
+            ),
+            0 => Self::Natural,
+            ..0 => Self::Flat(
+                NonZeroUsize::new(usize::try_from(-index).expect("should be non-negative"))
+                    .expect("should non-zero"),
+            ),
         }
     }
 
@@ -231,13 +258,13 @@ impl PitchClass {
         }
     }
 
-    fn semitones_within_octave_tet12_non_wrapping(&self) -> isize {
+    pub(crate) fn semitones_within_octave_tet12_non_wrapping(&self) -> isize {
         let Self { letter, accidental } = self;
 
         letter.semitones_within_octave_tet12() as isize + accidental.semitones_tet12()
     }
 
-    fn semitones_within_octave_tet12_wrapping(&self) -> isize {
+    pub(crate) fn semitones_within_octave_tet12_wrapping(&self) -> isize {
         self.semitones_within_octave_tet12_non_wrapping()
             .rem_euclid(12)
     }
@@ -348,7 +375,7 @@ impl Pitch {
         }
     }
 
-    fn semitones_tet12(&self) -> isize {
+    pub(crate) fn semitones_tet12(&self) -> isize {
         let Self { octave, class } = self;
 
         octave * 12 + class.semitones_within_octave_tet12_non_wrapping()

@@ -1,9 +1,17 @@
-use std::{fmt::Display, num::NonZeroUsize, ops::Neg};
+use std::{
+    fmt::Display,
+    num::NonZeroUsize,
+    ops::{Add, Neg, Sub},
+};
 
 use num2words::Num2Words;
 use paste::paste;
 
-use crate::{enharmonic::Enharmonic, tuning::TET12};
+use crate::{
+    enharmonic::Enharmonic,
+    pitches::{Accidental, Letter, Pitch, PitchClass},
+    tuning::{SemitonesTET12, TET12},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MajorMinorIntervalQuality {
@@ -388,6 +396,29 @@ impl Display for UnorderedSimpleIntervalNumber {
     }
 }
 
+impl Add<UnorderedSimpleIntervalNumber> for Letter {
+    type Output = Self;
+
+    fn add(self, rhs: UnorderedSimpleIntervalNumber) -> Self::Output {
+        Self::try_from_index_within_octave(
+            (self.index_within_octave() + rhs.zero_based()).rem_euclid(7),
+        )
+        .expect("index should be in valid range")
+    }
+}
+
+impl Sub<UnorderedSimpleIntervalNumber> for Letter {
+    type Output = Self;
+
+    fn sub(self, rhs: UnorderedSimpleIntervalNumber) -> Self::Output {
+        Self::try_from_index_within_octave(
+            (self.index_within_octave() as isize - rhs.zero_based() as isize).rem_euclid(7)
+                as usize,
+        )
+        .expect("index should be in valid range")
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum UnorderedSimpleInterval {
     Unison(PerfectIntervalQuality),
@@ -513,6 +544,76 @@ impl Display for UnorderedSimpleInterval {
         }
 
         self.interval_number().fmt(f)
+    }
+}
+
+impl Add<UnorderedSimpleInterval> for PitchClass {
+    type Output = Self;
+
+    fn add(self, rhs: UnorderedSimpleInterval) -> Self::Output {
+        let letter = self.letter + rhs.interval_number();
+
+        let goes_into_next_octave = letter < self.letter;
+
+        let accidental = Accidental::from_semitones_tet12(
+            self.semitones_within_octave_tet12_non_wrapping() as isize + rhs.semitones_tet12()
+                - (letter.semitones_within_octave_tet12() as isize
+                    + if goes_into_next_octave { 12 } else { 0 }),
+        );
+
+        Self { letter, accidental }
+    }
+}
+
+impl Sub<UnorderedSimpleInterval> for PitchClass {
+    type Output = Self;
+
+    fn sub(self, rhs: UnorderedSimpleInterval) -> Self::Output {
+        let letter = self.letter - rhs.interval_number();
+
+        let goes_into_previous_octave = letter > self.letter;
+
+        let accidental = Accidental::from_semitones_tet12(
+            self.semitones_within_octave_tet12_non_wrapping() as isize
+                - rhs.semitones_tet12()
+                - (letter.semitones_within_octave_tet12() as isize
+                    - if goes_into_previous_octave { 12 } else { 0 }),
+        );
+
+        Self { letter, accidental }
+    }
+}
+
+impl Add<UnorderedSimpleInterval> for Pitch {
+    type Output = Self;
+
+    fn add(self, rhs: UnorderedSimpleInterval) -> Self::Output {
+        let Self { octave, class } = self;
+
+        let octave = octave
+            + (class.letter.index_within_octave() + rhs.interval_number().zero_based())
+                .div_euclid(7) as isize;
+
+        let class = self.class + rhs;
+
+        Self { octave, class }
+    }
+}
+
+impl Sub<UnorderedSimpleInterval> for Pitch {
+    type Output = Self;
+
+    fn sub(self, rhs: UnorderedSimpleInterval) -> Self::Output {
+        let Self { octave, class } = self;
+
+        let octave = octave
+            + (class.letter.index_within_octave() as isize
+                - rhs.interval_number().zero_based() as isize)
+                .div_euclid(7);
+
+        let class = self.class - rhs;
+
+        Self { octave, class }
     }
 }
 
@@ -849,6 +950,36 @@ impl Display for UnorderedInterval {
     }
 }
 
+impl Add<UnorderedInterval> for Pitch {
+    type Output = Self;
+
+    fn add(self, rhs: UnorderedInterval) -> Self::Output {
+        let UnorderedInterval { octaves, simple } = rhs;
+
+        let Self { octave, class } = self + simple;
+
+        Self {
+            octave: octave + octaves as isize,
+            class,
+        }
+    }
+}
+
+impl Sub<UnorderedInterval> for Pitch {
+    type Output = Self;
+
+    fn sub(self, rhs: UnorderedInterval) -> Self::Output {
+        let UnorderedInterval { octaves, simple } = rhs;
+
+        let Self { octave, class } = self - simple;
+
+        Self {
+            octave: octave - octaves as isize,
+            class,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum IntervalDirection {
     Descending,
@@ -1098,6 +1229,38 @@ impl Display for OrderedInterval {
                     write!(f, "{}{}", direction, unordered)
                 }
             }
+        }
+    }
+}
+
+impl Add<OrderedInterval> for Pitch {
+    type Output = Self;
+
+    fn add(self, rhs: OrderedInterval) -> Self::Output {
+        let OrderedInterval {
+            direction,
+            unordered,
+        } = rhs;
+
+        match direction {
+            IntervalDirection::Descending => self - unordered,
+            IntervalDirection::Ascending => self + unordered,
+        }
+    }
+}
+
+impl Sub<OrderedInterval> for Pitch {
+    type Output = Self;
+
+    fn sub(self, rhs: OrderedInterval) -> Self::Output {
+        let OrderedInterval {
+            direction,
+            unordered,
+        } = rhs;
+
+        match direction {
+            IntervalDirection::Descending => self + unordered,
+            IntervalDirection::Ascending => self - unordered,
         }
     }
 }
@@ -1457,6 +1620,127 @@ mod tests {
             }
             (true, false) | (false, true) => {
                 assert_not_enharmonic!(a1 - b1, a2 - b2);
+            }
+            (false, false) => {}
+        }
+    }
+
+    #[test]
+    fn pitch_add_ordered_pitch_interval_examples() {
+        assert_eq!(
+            Pitch::C4 + UnorderedInterval::MAJOR_THIRD.ascending(),
+            Pitch::E4
+        );
+
+        assert_eq!(
+            Pitch::C4 + UnorderedInterval::MINOR_SECOND.ascending(),
+            Pitch::Db4
+        );
+
+        assert_eq!(
+            Pitch::E4 + UnorderedInterval::MINOR_SECOND.ascending(),
+            Pitch::F4
+        );
+
+        assert_eq!(
+            Pitch::A4 + UnorderedInterval::MINOR_THIRD.ascending(),
+            Pitch::C5
+        );
+
+        assert_eq!(
+            Pitch::G2 + UnorderedInterval::AUGMENTED_TWELFTH.ascending(),
+            Pitch::Ds4
+        );
+
+        assert_eq!(
+            Pitch::C3 + UnorderedInterval::MAJOR_SECOND.descending(),
+            Pitch::Bb2
+        );
+
+        assert_eq!(
+            Pitch::E6 + UnorderedInterval::MAJOR_THIRD.descending(),
+            Pitch::C6
+        );
+
+        assert_eq!(
+            Pitch::Fb3 + UnorderedInterval::DOUBLY_DIMINISHED_NINTH.descending(),
+            Pitch::Es2
+        );
+    }
+
+    #[quickcheck]
+    fn pitch_add_ordered_interval_equals_sub_neg(pitch: Pitch, interval: OrderedInterval) {
+        assert_eq!(pitch + interval, pitch - (-interval));
+    }
+
+    #[quickcheck]
+    fn pitch_sub_ordered_interval_equals_add_neg(pitch: Pitch, interval: OrderedInterval) {
+        assert_eq!(pitch - interval, pitch + (-interval));
+    }
+
+    #[quickcheck]
+    fn pitch_add_and_sub_ordered_interval_are_inverses(pitch: Pitch, interval: OrderedInterval) {
+        assert_eq!((pitch + interval) - interval, pitch);
+        assert_eq!((pitch - interval) + interval, pitch);
+    }
+
+    #[quickcheck]
+    fn pitch_add_unison(pitch: Pitch) {
+        assert_eq!(pitch + UnorderedInterval::PERFECT_UNISON, pitch);
+        assert_eq!(pitch + UnorderedInterval::PERFECT_UNISON.ascending(), pitch);
+        assert_eq!(
+            pitch + UnorderedInterval::PERFECT_UNISON.descending(),
+            pitch
+        );
+    }
+
+    #[quickcheck]
+    fn pitch_sub_unison(pitch: Pitch) {
+        assert_eq!(pitch - UnorderedInterval::PERFECT_UNISON, pitch);
+        assert_eq!(pitch - UnorderedInterval::PERFECT_UNISON.ascending(), pitch);
+        assert_eq!(
+            pitch - UnorderedInterval::PERFECT_UNISON.descending(),
+            pitch
+        );
+    }
+
+    #[quickcheck]
+    fn pitch_add_octave(pitch: Pitch) {
+        assert_eq!(pitch + UnorderedInterval::PERFECT_OCTAVE, pitch.octave_up());
+    }
+
+    #[quickcheck]
+    fn pitch_sub_octave(pitch: Pitch) {
+        assert_eq!(
+            pitch - UnorderedInterval::PERFECT_OCTAVE,
+            pitch.octave_down()
+        );
+    }
+
+    #[quickcheck]
+    fn pitch_add_ordered_interval_semitones_tet12(pitch: Pitch, interval: OrderedInterval) {
+        assert_eq!(
+            (pitch + interval).semitones_tet12(),
+            pitch.semitones_tet12() + interval.semitones_tet12()
+        );
+    }
+
+    #[quickcheck]
+    fn pitch_add_ordered_interval_preserves_enharmonic_equivalence(
+        pitch_1: Pitch,
+        pitch_2: Pitch,
+        interval_1: OrderedInterval,
+        interval_2: OrderedInterval,
+    ) {
+        match (
+            pitch_1.enharmonic(&pitch_2),
+            interval_1.enharmonic(&interval_2),
+        ) {
+            (true, true) => {
+                assert_enharmonic!(pitch_1 + interval_1, pitch_2 + interval_2);
+            }
+            (true, false) | (false, true) => {
+                assert_not_enharmonic!(pitch_1 + interval_1, pitch_2 + interval_2);
             }
             (false, false) => {}
         }
