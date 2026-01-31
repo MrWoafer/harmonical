@@ -374,6 +374,29 @@ impl UnorderedSimpleIntervalNumber {
             _ => Self::try_from_zero_based(number - 1),
         }
     }
+
+    pub fn wrapping_add(self, rhs: Self) -> Self {
+        Self::try_from_zero_based((self.zero_based() + rhs.zero_based()).rem_euclid(7))
+            .expect("should be in valid range")
+    }
+
+    pub fn checked_sub(self, rhs: Self) -> Result<Self, ()> {
+        self.zero_based()
+            .checked_sub(rhs.zero_based())
+            .ok_or(())
+            .map(|zero_based| {
+                Self::try_from_zero_based(zero_based).expect("should be in valid range")
+            })
+    }
+
+    pub fn wrapping_sub(self, rhs: Self) -> Self {
+        Self::try_from_zero_based(if self.zero_based() >= rhs.zero_based() {
+            self.zero_based() - rhs.zero_based()
+        } else {
+            self.zero_based() + 7 - rhs.zero_based()
+        })
+        .expect("should be in valid range")
+    }
 }
 
 impl Display for UnorderedSimpleIntervalNumber {
@@ -416,6 +439,15 @@ impl Sub<UnorderedSimpleIntervalNumber> for Letter {
                 as usize,
         )
         .expect("index should be in valid range")
+    }
+}
+
+impl Sub for UnorderedSimpleIntervalNumber {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        self.checked_sub(rhs)
+            .expect("attempted to subtract larger interval number from smaller interval number")
     }
 }
 
@@ -527,6 +559,102 @@ impl UnorderedSimpleInterval {
             Self::Seventh(quality) => Self::Seventh(quality.diminish()),
         }
     }
+
+    pub fn wrapping_add(self, rhs: Self) -> Self {
+        let interval_number = self.interval_number().wrapping_add(rhs.interval_number());
+
+        let goes_into_next_octave = interval_number < self.interval_number();
+
+        let semitones_tet12 = self.semitones_tet12() + rhs.semitones_tet12()
+            - if goes_into_next_octave { 12 } else { 0 };
+
+        match interval_number {
+            UnorderedSimpleIntervalNumber::Unison => {
+                Self::Unison(PerfectIntervalQuality::from_index(semitones_tet12))
+            }
+            UnorderedSimpleIntervalNumber::Second => {
+                Self::Second(MajorMinorIntervalQuality::from_index(semitones_tet12 - 1))
+            }
+            UnorderedSimpleIntervalNumber::Third => {
+                Self::Third(MajorMinorIntervalQuality::from_index(semitones_tet12 - 3))
+            }
+            UnorderedSimpleIntervalNumber::Fourth => {
+                Self::Fourth(PerfectIntervalQuality::from_index(semitones_tet12 - 5))
+            }
+            UnorderedSimpleIntervalNumber::Fifth => {
+                Self::Fifth(PerfectIntervalQuality::from_index(semitones_tet12 - 7))
+            }
+            UnorderedSimpleIntervalNumber::Sixth => {
+                Self::Sixth(MajorMinorIntervalQuality::from_index(semitones_tet12 - 8))
+            }
+            UnorderedSimpleIntervalNumber::Seventh => {
+                Self::Seventh(MajorMinorIntervalQuality::from_index(semitones_tet12 - 10))
+            }
+        }
+    }
+
+    pub fn checked_sub(self, rhs: Self) -> Result<Self, ()> {
+        let interval_number = self.interval_number().checked_sub(rhs.interval_number())?;
+
+        let semitones_tet12 = self.semitones_tet12() - rhs.semitones_tet12();
+
+        Ok(match interval_number {
+            UnorderedSimpleIntervalNumber::Unison => {
+                Self::Unison(PerfectIntervalQuality::from_index(semitones_tet12))
+            }
+            UnorderedSimpleIntervalNumber::Second => {
+                Self::Second(MajorMinorIntervalQuality::from_index(semitones_tet12 - 1))
+            }
+            UnorderedSimpleIntervalNumber::Third => {
+                Self::Third(MajorMinorIntervalQuality::from_index(semitones_tet12 - 3))
+            }
+            UnorderedSimpleIntervalNumber::Fourth => {
+                Self::Fourth(PerfectIntervalQuality::from_index(semitones_tet12 - 5))
+            }
+            UnorderedSimpleIntervalNumber::Fifth => {
+                Self::Fifth(PerfectIntervalQuality::from_index(semitones_tet12 - 7))
+            }
+            UnorderedSimpleIntervalNumber::Sixth => {
+                Self::Sixth(MajorMinorIntervalQuality::from_index(semitones_tet12 - 8))
+            }
+            UnorderedSimpleIntervalNumber::Seventh => {
+                Self::Seventh(MajorMinorIntervalQuality::from_index(semitones_tet12 - 10))
+            }
+        })
+    }
+
+    pub fn wrapping_sub(self, rhs: Self) -> Self {
+        let interval_number = self.interval_number().wrapping_sub(rhs.interval_number());
+
+        let goes_into_previous_octave = interval_number > self.interval_number();
+
+        let semitones_tet12 = self.semitones_tet12() - rhs.semitones_tet12()
+            + if goes_into_previous_octave { 12 } else { 0 };
+
+        match interval_number {
+            UnorderedSimpleIntervalNumber::Unison => {
+                Self::Unison(PerfectIntervalQuality::from_index(semitones_tet12))
+            }
+            UnorderedSimpleIntervalNumber::Second => {
+                Self::Second(MajorMinorIntervalQuality::from_index(semitones_tet12 - 1))
+            }
+            UnorderedSimpleIntervalNumber::Third => {
+                Self::Third(MajorMinorIntervalQuality::from_index(semitones_tet12 - 3))
+            }
+            UnorderedSimpleIntervalNumber::Fourth => {
+                Self::Fourth(PerfectIntervalQuality::from_index(semitones_tet12 - 5))
+            }
+            UnorderedSimpleIntervalNumber::Fifth => {
+                Self::Fifth(PerfectIntervalQuality::from_index(semitones_tet12 - 7))
+            }
+            UnorderedSimpleIntervalNumber::Sixth => {
+                Self::Sixth(MajorMinorIntervalQuality::from_index(semitones_tet12 - 8))
+            }
+            UnorderedSimpleIntervalNumber::Seventh => {
+                Self::Seventh(MajorMinorIntervalQuality::from_index(semitones_tet12 - 10))
+            }
+        }
+    }
 }
 
 impl Enharmonic for UnorderedSimpleInterval {
@@ -614,6 +742,15 @@ impl Sub<UnorderedSimpleInterval> for Pitch {
         let class = self.class - rhs;
 
         Self { octave, class }
+    }
+}
+
+impl Sub for UnorderedSimpleInterval {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        self.checked_sub(rhs)
+            .expect("attempted to subtract larger interval from smaller interval")
     }
 }
 
@@ -723,6 +860,19 @@ impl UnorderedIntervalNumber {
             _ => Ok(Self::from_zero_based(number - 1)),
         }
     }
+
+    pub fn checked_sub(self, rhs: Self) -> Result<Self, ()> {
+        let simple = self.simple.wrapping_sub(rhs.simple);
+
+        let goes_into_previous_octave = simple > self.simple;
+
+        let octaves = self
+            .octaves
+            .checked_sub(rhs.octaves + if goes_into_previous_octave { 1 } else { 0 })
+            .ok_or(())?;
+
+        Ok(Self { octaves, simple })
+    }
 }
 
 impl From<UnorderedSimpleIntervalNumber> for UnorderedIntervalNumber {
@@ -754,6 +904,29 @@ impl Display for UnorderedIntervalNumber {
         } else {
             write!(f, "{}", self.one_based())
         }
+    }
+}
+
+impl Add for UnorderedIntervalNumber {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let simple = self.simple.wrapping_add(rhs.simple);
+
+        let goes_into_next_octave = simple < self.simple;
+
+        let octaves = self.octaves + rhs.octaves + if goes_into_next_octave { 1 } else { 0 };
+
+        Self { octaves, simple }
+    }
+}
+
+impl Sub for UnorderedIntervalNumber {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        self.checked_sub(rhs)
+            .expect("attempted to subtract larger interval from smaller interval")
     }
 }
 
@@ -924,6 +1097,19 @@ impl UnorderedInterval {
             simple: simple.diminish(),
         }
     }
+
+    pub fn checked_sub(self, rhs: Self) -> Result<Self, ()> {
+        let simple = self.simple.wrapping_sub(rhs.simple);
+
+        let goes_into_previous_octave = simple.interval_number() > self.simple.interval_number();
+
+        let octaves = self
+            .octaves
+            .checked_sub(rhs.octaves + if goes_into_previous_octave { 1 } else { 0 })
+            .ok_or(())?;
+
+        Ok(Self { octaves, simple })
+    }
 }
 
 impl Enharmonic for UnorderedInterval {
@@ -977,6 +1163,29 @@ impl Sub<UnorderedInterval> for Pitch {
             octave: octave - octaves as isize,
             class,
         }
+    }
+}
+
+impl Add for UnorderedInterval {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let simple = self.simple.wrapping_add(rhs.simple);
+
+        let goes_into_next_octave = simple.interval_number() < self.simple.interval_number();
+
+        let octaves = self.octaves + rhs.octaves + if goes_into_next_octave { 1 } else { 0 };
+
+        Self { octaves, simple }
+    }
+}
+
+impl Sub for UnorderedInterval {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        self.checked_sub(rhs)
+            .expect("attempted to subtract larger interval from smaller interval")
     }
 }
 
@@ -1744,5 +1953,137 @@ mod tests {
             }
             (false, false) => {}
         }
+    }
+
+    #[test]
+    fn add_unordered_interval_examples() {
+        assert_eq!(
+            UnorderedInterval::MAJOR_THIRD + UnorderedInterval::MINOR_THIRD,
+            UnorderedInterval::PERFECT_FIFTH
+        );
+
+        assert_eq!(
+            UnorderedInterval::PERFECT_FIFTH + UnorderedInterval::PERFECT_FOURTH,
+            UnorderedInterval::PERFECT_OCTAVE
+        );
+
+        assert_eq!(
+            UnorderedInterval::DIMINISHED_SIXTH + UnorderedInterval::DOUBLY_AUGMENTED_FIFTH,
+            UnorderedInterval::MAJOR_TENTH
+        );
+    }
+
+    #[test]
+    fn sub_unordered_interval_examples() {
+        assert_eq!(
+            UnorderedInterval::PERFECT_FIFTH - UnorderedInterval::MINOR_THIRD,
+            UnorderedInterval::MAJOR_THIRD
+        );
+
+        assert_eq!(
+            UnorderedInterval::PERFECT_UNISON - UnorderedInterval::AUGMENTED_UNISON,
+            UnorderedInterval::DIMINISHED_UNISON
+        );
+    }
+
+    #[quickcheck]
+    fn add_unordered_interval_semitones_tet12(a: UnorderedInterval, b: UnorderedInterval) {
+        assert_eq!(
+            (a + b).semitones_tet12(),
+            a.semitones_tet12() + b.semitones_tet12()
+        );
+    }
+
+    #[quickcheck]
+    fn sub_unordered_interval_semitones_tet12(a: UnorderedInterval, b: UnorderedInterval) {
+        if let Ok(sub) = a.checked_sub(b) {
+            assert_eq!(
+                sub.semitones_tet12(),
+                a.semitones_tet12() - b.semitones_tet12()
+            );
+        }
+    }
+
+    #[quickcheck]
+    fn add_unordered_interval_preserves_enharmonic_equivalence(
+        a: UnorderedInterval,
+        b: UnorderedInterval,
+        c: UnorderedInterval,
+        d: UnorderedInterval,
+    ) {
+        match (a.enharmonic(&b), c.enharmonic(&d)) {
+            (true, true) => {
+                assert_enharmonic!(a + b, c + d);
+            }
+            (true, false) | (false, true) => {
+                assert_not_enharmonic!(a + b, c + d);
+            }
+            (false, false) => {}
+        }
+    }
+
+    #[quickcheck]
+    fn add_unordered_interval_associativity(
+        a: UnorderedInterval,
+        b: UnorderedInterval,
+        c: UnorderedInterval,
+    ) {
+        assert_eq!((a + b) + c, a + (b + c));
+    }
+
+    #[quickcheck]
+    fn add_unordered_interval_commutativity(a: UnorderedInterval, b: UnorderedInterval) {
+        assert_eq!(a + b, b + a);
+    }
+
+    #[quickcheck]
+    fn pitch_add_unordered_interval_compatibility(
+        pitch: Pitch,
+        interval_1: UnorderedInterval,
+        interval_2: UnorderedInterval,
+    ) {
+        assert_eq!(
+            (pitch + interval_1) + interval_2,
+            pitch + (interval_1 + interval_2)
+        );
+    }
+
+    #[quickcheck]
+    fn unordered_interval_add_unison(interval: UnorderedInterval) {
+        assert_eq!(interval + UnorderedInterval::PERFECT_UNISON, interval);
+    }
+
+    #[quickcheck]
+    fn unordered_interval_add_octave(interval: UnorderedInterval) {
+        assert_eq!(
+            interval + UnorderedInterval::PERFECT_OCTAVE,
+            UnorderedInterval {
+                octaves: interval.octaves + 1,
+                ..interval
+            }
+        );
+    }
+
+    #[quickcheck]
+    fn add_and_sub_unordered_interval_are_inverses(a: UnorderedInterval, b: UnorderedInterval) {
+        assert_eq!((a + b) - b, a);
+
+        if let Ok(sub) = a.checked_sub(b) {
+            assert_eq!(sub + b, a);
+        }
+    }
+
+    #[quickcheck]
+    fn sub_unordered_interval_err(a: UnorderedInterval, b: UnorderedInterval) {
+        if a >= b {
+            assert!(a.checked_sub(b).is_ok());
+        } else {
+            assert!(a.checked_sub(b).is_err());
+        }
+    }
+
+    #[quickcheck]
+    fn unordered_interval_sub_self(interval: UnorderedInterval) {
+        assert_eq!(interval - interval, UnorderedInterval::PERFECT_UNISON);
     }
 }
