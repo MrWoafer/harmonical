@@ -5,8 +5,8 @@ use paste::paste;
 use crate::{
     enharmonic::Enharmonic,
     intervals::{
-        IntervalDirection, MajorMinorIntervalQuality, OrderedPitchInterval, PerfectIntervalQuality,
-        UnorderedPitchInterval, UnorderedSimplePitchInterval, UnorderedSimplePitchIntervalNumber,
+        IntervalDirection, MajorMinorIntervalQuality, OrderedInterval, PerfectIntervalQuality,
+        UnorderedInterval, UnorderedSimpleInterval, UnorderedSimpleIntervalNumber,
     },
 };
 
@@ -62,7 +62,7 @@ impl From<&Letter> for char {
 }
 
 impl Sub for Letter {
-    type Output = UnorderedSimplePitchIntervalNumber;
+    type Output = UnorderedSimpleIntervalNumber;
 
     fn sub(self, rhs: Self) -> Self::Output {
         let interval_number = if self.index_in_octave() >= rhs.index_in_octave() {
@@ -71,7 +71,7 @@ impl Sub for Letter {
             self.index_in_octave() + 7 - rhs.index_in_octave()
         };
 
-        UnorderedSimplePitchIntervalNumber::try_from_zero_based(interval_number)
+        UnorderedSimpleIntervalNumber::try_from_zero_based(interval_number)
             .expect("number should be in valid range")
     }
 }
@@ -375,7 +375,7 @@ impl Display for Pitch {
 }
 
 impl Sub for Pitch {
-    type Output = OrderedPitchInterval;
+    type Output = OrderedInterval;
 
     fn sub(self, rhs: Self) -> Self::Output {
         let direction = match self.cmp(&rhs) {
@@ -403,32 +403,32 @@ impl Sub for Pitch {
         } - 12 * octaves as isize;
 
         let simple = match simple_number {
-            UnorderedSimplePitchIntervalNumber::Unison => UnorderedSimplePitchInterval::Unison(
+            UnorderedSimpleIntervalNumber::Unison => UnorderedSimpleInterval::Unison(
                 PerfectIntervalQuality::from_index(simple_pitch_number_difference),
             ),
-            UnorderedSimplePitchIntervalNumber::Second => UnorderedSimplePitchInterval::Second(
+            UnorderedSimpleIntervalNumber::Second => UnorderedSimpleInterval::Second(
                 MajorMinorIntervalQuality::from_index(simple_pitch_number_difference - 1),
             ),
-            UnorderedSimplePitchIntervalNumber::Third => UnorderedSimplePitchInterval::Third(
+            UnorderedSimpleIntervalNumber::Third => UnorderedSimpleInterval::Third(
                 MajorMinorIntervalQuality::from_index(simple_pitch_number_difference - 3),
             ),
-            UnorderedSimplePitchIntervalNumber::Fourth => UnorderedSimplePitchInterval::Fourth(
+            UnorderedSimpleIntervalNumber::Fourth => UnorderedSimpleInterval::Fourth(
                 PerfectIntervalQuality::from_index(simple_pitch_number_difference - 5),
             ),
-            UnorderedSimplePitchIntervalNumber::Fifth => UnorderedSimplePitchInterval::Fifth(
+            UnorderedSimpleIntervalNumber::Fifth => UnorderedSimpleInterval::Fifth(
                 PerfectIntervalQuality::from_index(simple_pitch_number_difference - 7),
             ),
-            UnorderedSimplePitchIntervalNumber::Sixth => UnorderedSimplePitchInterval::Sixth(
+            UnorderedSimpleIntervalNumber::Sixth => UnorderedSimpleInterval::Sixth(
                 MajorMinorIntervalQuality::from_index(simple_pitch_number_difference - 8),
             ),
-            UnorderedSimplePitchIntervalNumber::Seventh => UnorderedSimplePitchInterval::Seventh(
+            UnorderedSimpleIntervalNumber::Seventh => UnorderedSimpleInterval::Seventh(
                 MajorMinorIntervalQuality::from_index(simple_pitch_number_difference - 10),
             ),
         };
 
-        OrderedPitchInterval {
+        OrderedInterval {
             direction,
-            unordered: UnorderedPitchInterval { octaves, simple },
+            unordered: UnorderedInterval { octaves, simple },
         }
     }
 }
@@ -502,47 +502,47 @@ mod tests {
     fn pitch_sub_examples() {
         assert_eq!(
             Pitch::A4 - Pitch::A4,
-            UnorderedPitchInterval::PERFECT_UNISON.ascending()
+            UnorderedInterval::PERFECT_UNISON.ascending()
         );
 
         assert_eq!(
             Pitch::A4 - Pitch::A4,
-            UnorderedPitchInterval::PERFECT_UNISON.descending()
+            UnorderedInterval::PERFECT_UNISON.descending()
         );
 
         assert_eq!(
             Pitch::B3 - Pitch::A3,
-            UnorderedPitchInterval::MAJOR_SECOND.ascending()
+            UnorderedInterval::MAJOR_SECOND.ascending()
         );
 
         assert_eq!(
             Pitch::F2 - Pitch::E2,
-            UnorderedPitchInterval::MINOR_SECOND.ascending()
+            UnorderedInterval::MINOR_SECOND.ascending()
         );
 
         assert_eq!(
             Pitch::E5 - Pitch::F4,
-            UnorderedPitchInterval::MAJOR_SEVENTH.ascending()
+            UnorderedInterval::MAJOR_SEVENTH.ascending()
         );
 
         assert_eq!(
             Pitch::G1 - Pitch::D1,
-            UnorderedPitchInterval::PERFECT_FOURTH.ascending()
+            UnorderedInterval::PERFECT_FOURTH.ascending()
         );
 
         assert_eq!(
             Pitch::Ab6 - Pitch::E6,
-            UnorderedPitchInterval::DIMINISHED_FOURTH.ascending()
+            UnorderedInterval::DIMINISHED_FOURTH.ascending()
         );
 
         assert_eq!(
             Pitch::Gs7 - Pitch::Gb7,
-            UnorderedPitchInterval::DOUBLY_AUGMENTED_UNISON.ascending()
+            UnorderedInterval::DOUBLY_AUGMENTED_UNISON.ascending()
         );
 
         assert_eq!(
             Pitch::Cbb4 - Pitch::Cx4,
-            UnorderedPitchInterval::from(UnorderedSimplePitchInterval::Unison(
+            UnorderedInterval::from(UnorderedSimpleInterval::Unison(
                 PerfectIntervalQuality::Augmented(NonZeroUsize::new(4).unwrap())
             ))
             .descending()
@@ -550,9 +550,9 @@ mod tests {
 
         assert_eq!(
             Pitch::Cbb5 - Pitch::Cx4,
-            UnorderedPitchInterval {
+            UnorderedInterval {
                 octaves: 1,
-                simple: UnorderedSimplePitchInterval::Unison(PerfectIntervalQuality::Diminished(
+                simple: UnorderedSimpleInterval::Unison(PerfectIntervalQuality::Diminished(
                     NonZeroUsize::new(4).unwrap()
                 ))
             }
@@ -561,9 +561,9 @@ mod tests {
 
         assert_eq!(
             Pitch::Fx5 - Pitch::Fbb4,
-            UnorderedPitchInterval {
+            UnorderedInterval {
                 octaves: 1,
-                simple: UnorderedSimplePitchInterval::Unison(PerfectIntervalQuality::Augmented(
+                simple: UnorderedSimpleInterval::Unison(PerfectIntervalQuality::Augmented(
                     NonZeroUsize::new(4).unwrap()
                 ))
             }
@@ -572,12 +572,12 @@ mod tests {
 
         assert_eq!(
             Pitch::Es5 - Pitch::As4,
-            UnorderedPitchInterval::PERFECT_FIFTH.ascending()
+            UnorderedInterval::PERFECT_FIFTH.ascending()
         );
 
         assert_eq!(
             Pitch::Es5 - Pitch::As3,
-            UnorderedPitchInterval::PERFECT_TWELFTH.ascending()
+            UnorderedInterval::PERFECT_TWELFTH.ascending()
         );
     }
 

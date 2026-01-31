@@ -1,7 +1,7 @@
 use crate::{
     intervals::{
-        IntervalDirection, MajorMinorIntervalQuality, OrderedPitchInterval, PerfectIntervalQuality,
-        UnorderedPitchInterval, UnorderedSimplePitchInterval,
+        IntervalDirection, MajorMinorIntervalQuality, OrderedInterval, PerfectIntervalQuality,
+        UnorderedInterval, UnorderedSimpleInterval,
     },
     pitches::Pitch,
 };
@@ -76,7 +76,7 @@ fn semitones_tet12_offset_perfect(quality: &PerfectIntervalQuality) -> isize {
     }
 }
 
-impl SemitonesTET12 for UnorderedSimplePitchInterval {
+impl SemitonesTET12 for UnorderedSimpleInterval {
     type Semitones = isize;
 
     fn semitones_tet12(&self) -> Self::Semitones {
@@ -92,7 +92,7 @@ impl SemitonesTET12 for UnorderedSimplePitchInterval {
     }
 }
 
-impl SemitonesTET12 for UnorderedPitchInterval {
+impl SemitonesTET12 for UnorderedInterval {
     type Semitones = isize;
 
     fn semitones_tet12(&self) -> Self::Semitones {
@@ -102,7 +102,7 @@ impl SemitonesTET12 for UnorderedPitchInterval {
     }
 }
 
-impl SemitonesTET12 for OrderedPitchInterval {
+impl SemitonesTET12 for OrderedInterval {
     type Semitones = isize;
 
     fn semitones_tet12(&self) -> Self::Semitones {

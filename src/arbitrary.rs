@@ -6,9 +6,9 @@ use quickcheck::Arbitrary;
 
 use crate::{
     intervals::{
-        IntervalDirection, MajorMinorIntervalQuality, OrderedPitchInterval, PerfectIntervalQuality,
-        UnorderedPitchInterval, UnorderedPitchIntervalNumber, UnorderedSimplePitchInterval,
-        UnorderedSimplePitchIntervalNumber,
+        IntervalDirection, MajorMinorIntervalQuality, OrderedInterval, PerfectIntervalQuality,
+        UnorderedInterval, UnorderedIntervalNumber, UnorderedSimpleInterval,
+        UnorderedSimpleIntervalNumber,
     },
     pitches::{Accidental, Letter, Pitch, PitchClass},
 };
@@ -95,7 +95,7 @@ impl Arbitrary for PerfectIntervalQuality {
     }
 }
 
-impl Arbitrary for UnorderedSimplePitchIntervalNumber {
+impl Arbitrary for UnorderedSimpleIntervalNumber {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         *g.choose(&[
             Self::Unison,
@@ -110,21 +110,21 @@ impl Arbitrary for UnorderedSimplePitchIntervalNumber {
     }
 }
 
-impl Arbitrary for UnorderedSimplePitchInterval {
+impl Arbitrary for UnorderedSimpleInterval {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
-        match UnorderedSimplePitchIntervalNumber::arbitrary(g) {
-            UnorderedSimplePitchIntervalNumber::Unison => Self::Unison(Arbitrary::arbitrary(g)),
-            UnorderedSimplePitchIntervalNumber::Second => Self::Second(Arbitrary::arbitrary(g)),
-            UnorderedSimplePitchIntervalNumber::Third => Self::Third(Arbitrary::arbitrary(g)),
-            UnorderedSimplePitchIntervalNumber::Fourth => Self::Fourth(Arbitrary::arbitrary(g)),
-            UnorderedSimplePitchIntervalNumber::Fifth => Self::Fifth(Arbitrary::arbitrary(g)),
-            UnorderedSimplePitchIntervalNumber::Sixth => Self::Sixth(Arbitrary::arbitrary(g)),
-            UnorderedSimplePitchIntervalNumber::Seventh => Self::Seventh(Arbitrary::arbitrary(g)),
+        match UnorderedSimpleIntervalNumber::arbitrary(g) {
+            UnorderedSimpleIntervalNumber::Unison => Self::Unison(Arbitrary::arbitrary(g)),
+            UnorderedSimpleIntervalNumber::Second => Self::Second(Arbitrary::arbitrary(g)),
+            UnorderedSimpleIntervalNumber::Third => Self::Third(Arbitrary::arbitrary(g)),
+            UnorderedSimpleIntervalNumber::Fourth => Self::Fourth(Arbitrary::arbitrary(g)),
+            UnorderedSimpleIntervalNumber::Fifth => Self::Fifth(Arbitrary::arbitrary(g)),
+            UnorderedSimpleIntervalNumber::Sixth => Self::Sixth(Arbitrary::arbitrary(g)),
+            UnorderedSimpleIntervalNumber::Seventh => Self::Seventh(Arbitrary::arbitrary(g)),
         }
     }
 }
 
-impl Arbitrary for UnorderedPitchIntervalNumber {
+impl Arbitrary for UnorderedIntervalNumber {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         Self {
             octaves: usize::arbitrary(g) % 100,
@@ -133,7 +133,7 @@ impl Arbitrary for UnorderedPitchIntervalNumber {
     }
 }
 
-impl Arbitrary for UnorderedPitchInterval {
+impl Arbitrary for UnorderedInterval {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         Self {
             octaves: usize::arbitrary(g) % 100,
@@ -149,7 +149,7 @@ impl Arbitrary for IntervalDirection {
     }
 }
 
-impl Arbitrary for OrderedPitchInterval {
+impl Arbitrary for OrderedInterval {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         Self {
             direction: Arbitrary::arbitrary(g),
