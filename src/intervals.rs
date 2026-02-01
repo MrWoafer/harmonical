@@ -1195,17 +1195,6 @@ pub enum IntervalDirection {
     Ascending,
 }
 
-impl Neg for IntervalDirection {
-    type Output = Self;
-
-    fn neg(self) -> Self::Output {
-        match self {
-            IntervalDirection::Ascending => IntervalDirection::Descending,
-            IntervalDirection::Descending => IntervalDirection::Ascending,
-        }
-    }
-}
-
 impl Display for IntervalDirection {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if f.alternate() {
@@ -1218,6 +1207,17 @@ impl Display for IntervalDirection {
                 Self::Descending => write!(f, "-"),
                 Self::Ascending => write!(f, "+"),
             }
+        }
+    }
+}
+
+impl Neg for IntervalDirection {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        match self {
+            IntervalDirection::Ascending => IntervalDirection::Descending,
+            IntervalDirection::Descending => IntervalDirection::Ascending,
         }
     }
 }
@@ -1405,22 +1405,6 @@ impl Enharmonic for OrderedInterval {
     }
 }
 
-impl Neg for OrderedInterval {
-    type Output = Self;
-
-    fn neg(self) -> Self::Output {
-        let Self {
-            direction,
-            unordered,
-        } = self;
-
-        Self {
-            direction: -direction,
-            unordered,
-        }
-    }
-}
-
 impl Display for OrderedInterval {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -1470,6 +1454,22 @@ impl Sub<OrderedInterval> for Pitch {
         match direction {
             IntervalDirection::Descending => self + unordered,
             IntervalDirection::Ascending => self - unordered,
+        }
+    }
+}
+
+impl Neg for OrderedInterval {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        let Self {
+            direction,
+            unordered,
+        } = self;
+
+        Self {
+            direction: -direction,
+            unordered,
         }
     }
 }
