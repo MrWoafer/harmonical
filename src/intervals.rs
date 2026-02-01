@@ -1,7 +1,7 @@
 use std::{
     fmt::Display,
     num::NonZeroUsize,
-    ops::{Add, Mul, Neg, Sub},
+    ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
 use num2words::Num2Words;
@@ -748,6 +748,12 @@ impl Add<UnorderedSimpleInterval> for Pitch {
     }
 }
 
+impl AddAssign<UnorderedSimpleInterval> for Pitch {
+    fn add_assign(&mut self, rhs: UnorderedSimpleInterval) {
+        *self = *self + rhs;
+    }
+}
+
 impl Sub<UnorderedSimpleInterval> for Pitch {
     type Output = Self;
 
@@ -762,6 +768,12 @@ impl Sub<UnorderedSimpleInterval> for Pitch {
         let class = self.class.wrapping_sub(rhs);
 
         Self { octave, class }
+    }
+}
+
+impl SubAssign<UnorderedSimpleInterval> for Pitch {
+    fn sub_assign(&mut self, rhs: UnorderedSimpleInterval) {
+        *self = *self - rhs;
     }
 }
 
@@ -954,12 +966,24 @@ impl Add for UnorderedIntervalNumber {
     }
 }
 
+impl AddAssign for UnorderedIntervalNumber {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
 impl Sub for UnorderedIntervalNumber {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
         self.checked_sub(rhs)
             .expect("attempted to subtract larger interval from smaller interval")
+    }
+}
+
+impl SubAssign for UnorderedIntervalNumber {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs;
     }
 }
 
@@ -980,6 +1004,12 @@ impl Mul<UnorderedIntervalNumber> for usize {
 
     fn mul(self, rhs: UnorderedIntervalNumber) -> Self::Output {
         rhs * self
+    }
+}
+
+impl MulAssign<usize> for UnorderedIntervalNumber {
+    fn mul_assign(&mut self, rhs: usize) {
+        *self = *self * rhs;
     }
 }
 
@@ -1173,6 +1203,12 @@ impl Add<UnorderedInterval> for Pitch {
     }
 }
 
+impl AddAssign<UnorderedInterval> for Pitch {
+    fn add_assign(&mut self, rhs: UnorderedInterval) {
+        *self = *self + rhs;
+    }
+}
+
 impl Sub<UnorderedInterval> for Pitch {
     type Output = Self;
 
@@ -1185,6 +1221,12 @@ impl Sub<UnorderedInterval> for Pitch {
             octave: octave - octaves as isize,
             class,
         }
+    }
+}
+
+impl SubAssign<UnorderedInterval> for Pitch {
+    fn sub_assign(&mut self, rhs: UnorderedInterval) {
+        *self = *self - rhs;
     }
 }
 
@@ -1202,12 +1244,24 @@ impl Add for UnorderedInterval {
     }
 }
 
+impl AddAssign for UnorderedInterval {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
 impl Sub for UnorderedInterval {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
         self.checked_sub(rhs)
             .expect("attempted to subtract larger interval from smaller interval")
+    }
+}
+
+impl SubAssign for UnorderedInterval {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs;
     }
 }
 
@@ -1228,6 +1282,12 @@ impl Mul<UnorderedInterval> for usize {
 
     fn mul(self, rhs: UnorderedInterval) -> Self::Output {
         rhs * self
+    }
+}
+
+impl MulAssign<usize> for UnorderedInterval {
+    fn mul_assign(&mut self, rhs: usize) {
+        *self = *self * rhs;
     }
 }
 
@@ -1318,11 +1378,23 @@ impl Add for OrderedIntervalNumber {
     }
 }
 
+impl AddAssign for OrderedIntervalNumber {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
 impl Sub for OrderedIntervalNumber {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
         self + (-rhs)
+    }
+}
+
+impl SubAssign for OrderedIntervalNumber {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs;
     }
 }
 
@@ -1370,6 +1442,12 @@ impl Mul<OrderedIntervalNumber> for isize {
 
     fn mul(self, rhs: OrderedIntervalNumber) -> Self::Output {
         rhs * self
+    }
+}
+
+impl MulAssign<isize> for OrderedIntervalNumber {
+    fn mul_assign(&mut self, rhs: isize) {
+        *self = *self * rhs;
     }
 }
 
@@ -1578,6 +1656,12 @@ impl Add<OrderedInterval> for Pitch {
     }
 }
 
+impl AddAssign<OrderedInterval> for Pitch {
+    fn add_assign(&mut self, rhs: OrderedInterval) {
+        *self = *self + rhs;
+    }
+}
+
 impl Sub<OrderedInterval> for Pitch {
     type Output = Self;
 
@@ -1591,6 +1675,12 @@ impl Sub<OrderedInterval> for Pitch {
             IntervalDirection::Descending => self + unordered,
             IntervalDirection::Ascending => self - unordered,
         }
+    }
+}
+
+impl SubAssign<OrderedInterval> for Pitch {
+    fn sub_assign(&mut self, rhs: OrderedInterval) {
+        *self = *self - rhs;
     }
 }
 
@@ -1623,11 +1713,23 @@ impl Add for OrderedInterval {
     }
 }
 
+impl AddAssign for OrderedInterval {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
 impl Sub for OrderedInterval {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
         self + (-rhs)
+    }
+}
+
+impl SubAssign for OrderedInterval {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs;
     }
 }
 
@@ -1675,6 +1777,12 @@ impl Mul<OrderedInterval> for isize {
 
     fn mul(self, rhs: OrderedInterval) -> Self::Output {
         rhs * self
+    }
+}
+
+impl MulAssign<isize> for OrderedInterval {
+    fn mul_assign(&mut self, rhs: isize) {
+        *self = *self * rhs;
     }
 }
 
@@ -2386,7 +2494,7 @@ mod tests {
 
         let mut expected_output = UnorderedInterval::P1;
         for _ in 0..times {
-            expected_output = expected_output + interval;
+            expected_output += interval;
         }
 
         assert_eq!(interval * times, expected_output);
@@ -2399,11 +2507,11 @@ mod tests {
         let mut expected_output = UnorderedInterval::P1.ascending();
         if times >= 0 {
             for _ in 0..times {
-                expected_output = expected_output + interval;
+                expected_output += interval;
             }
         } else {
             for _ in 0..-times {
-                expected_output = expected_output - interval;
+                expected_output -= interval;
             }
         }
 
