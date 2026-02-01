@@ -375,6 +375,10 @@ impl UnorderedSimpleIntervalNumber {
         }
     }
 
+    pub fn checked_add(self, rhs: Self) -> Result<Self, ()> {
+        Self::try_from_zero_based(self.zero_based() + rhs.zero_based())
+    }
+
     pub fn wrapping_add(self, rhs: Self) -> Self {
         Self::try_from_zero_based((self.zero_based() + rhs.zero_based()).rem_euclid(7))
             .expect("should be in valid range")
@@ -557,6 +561,16 @@ impl UnorderedSimpleInterval {
             Self::Fifth(quality) => Self::Fifth(quality.diminish()),
             Self::Sixth(quality) => Self::Sixth(quality.diminish()),
             Self::Seventh(quality) => Self::Seventh(quality.diminish()),
+        }
+    }
+
+    pub fn checked_add(self, rhs: Self) -> Result<Self, ()> {
+        let wrapping_add = self.wrapping_add(rhs);
+
+        if wrapping_add.interval_number() < self.interval_number() {
+            Err(())
+        } else {
+            Ok(wrapping_add)
         }
     }
 
