@@ -2327,7 +2327,7 @@ mod tests {
 
     #[quickcheck]
     fn sub_unordered_interval_err(a: UnorderedInterval, b: UnorderedInterval) {
-        if a >= b {
+        if a.interval_number() >= b.interval_number() {
             assert!(a.checked_sub(b).is_ok());
         } else {
             assert!(a.checked_sub(b).is_err());
