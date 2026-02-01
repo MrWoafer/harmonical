@@ -460,15 +460,6 @@ impl Display for UnorderedSimpleIntervalNumber {
     }
 }
 
-impl Sub for UnorderedSimpleIntervalNumber {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        self.checked_sub(rhs)
-            .expect("attempted to subtract larger interval number from smaller interval number")
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum UnorderedSimpleInterval {
     Unison(PerfectIntervalQuality),
@@ -808,15 +799,6 @@ impl Sub<UnorderedSimpleInterval> for Pitch {
         let class = self.class - rhs;
 
         Self { octave, class }
-    }
-}
-
-impl Sub for UnorderedSimpleInterval {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        self.checked_sub(rhs)
-            .expect("attempted to subtract larger interval from smaller interval")
     }
 }
 
