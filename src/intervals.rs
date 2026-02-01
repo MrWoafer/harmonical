@@ -9,7 +9,7 @@ use paste::paste;
 
 use crate::{
     enharmonic::Enharmonic,
-    pitches::{Accidental, Pitch, PitchClass},
+    pitches::Pitch,
     tuning::{SemitonesTET12, TET12},
 };
 
@@ -732,43 +732,6 @@ impl Display for UnorderedSimpleInterval {
     }
 }
 
-impl Add<UnorderedSimpleInterval> for PitchClass {
-    type Output = Self;
-
-    fn add(self, rhs: UnorderedSimpleInterval) -> Self::Output {
-        let letter = self.letter.wrapping_add(rhs.interval_number());
-
-        let goes_into_next_octave = letter < self.letter;
-
-        let accidental = Accidental::from_semitones_tet12(
-            self.semitones_within_octave_tet12_non_wrapping() as isize + rhs.semitones_tet12()
-                - (letter.semitones_within_octave_tet12() as isize
-                    + if goes_into_next_octave { 12 } else { 0 }),
-        );
-
-        Self { letter, accidental }
-    }
-}
-
-impl Sub<UnorderedSimpleInterval> for PitchClass {
-    type Output = Self;
-
-    fn sub(self, rhs: UnorderedSimpleInterval) -> Self::Output {
-        let letter = self.letter.wrapping_sub(rhs.interval_number());
-
-        let goes_into_previous_octave = letter > self.letter;
-
-        let accidental = Accidental::from_semitones_tet12(
-            self.semitones_within_octave_tet12_non_wrapping() as isize
-                - rhs.semitones_tet12()
-                - (letter.semitones_within_octave_tet12() as isize
-                    - if goes_into_previous_octave { 12 } else { 0 }),
-        );
-
-        Self { letter, accidental }
-    }
-}
-
 impl Add<UnorderedSimpleInterval> for Pitch {
     type Output = Self;
 
@@ -779,7 +742,7 @@ impl Add<UnorderedSimpleInterval> for Pitch {
             + (class.letter.index_within_octave() + rhs.interval_number().zero_based())
                 .div_euclid(7) as isize;
 
-        let class = self.class + rhs;
+        let class = self.class.wrapping_add(rhs);
 
         Self { octave, class }
     }
@@ -796,7 +759,7 @@ impl Sub<UnorderedSimpleInterval> for Pitch {
                 - rhs.interval_number().zero_based() as isize)
                 .div_euclid(7);
 
-        let class = self.class - rhs;
+        let class = self.class.wrapping_sub(rhs);
 
         Self { octave, class }
     }

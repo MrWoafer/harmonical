@@ -8,6 +8,7 @@ use crate::{
         IntervalDirection, MajorMinorIntervalQuality, OrderedInterval, PerfectIntervalQuality,
         UnorderedInterval, UnorderedSimpleInterval, UnorderedSimpleIntervalNumber,
     },
+    tuning::SemitonesTET12,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -282,6 +283,35 @@ impl PitchClass {
     pub(crate) fn semitones_within_octave_tet12_wrapping(&self) -> isize {
         self.semitones_within_octave_tet12_non_wrapping()
             .rem_euclid(12)
+    }
+
+    pub fn wrapping_add(self, rhs: UnorderedSimpleInterval) -> Self {
+        let letter = self.letter.wrapping_add(rhs.interval_number());
+
+        let goes_into_next_octave = letter < self.letter;
+
+        let accidental = Accidental::from_semitones_tet12(
+            self.semitones_within_octave_tet12_non_wrapping() as isize + rhs.semitones_tet12()
+                - (letter.semitones_within_octave_tet12() as isize
+                    + if goes_into_next_octave { 12 } else { 0 }),
+        );
+
+        Self { letter, accidental }
+    }
+
+    pub fn wrapping_sub(self, rhs: UnorderedSimpleInterval) -> Self {
+        let letter = self.letter.wrapping_sub(rhs.interval_number());
+
+        let goes_into_previous_octave = letter > self.letter;
+
+        let accidental = Accidental::from_semitones_tet12(
+            self.semitones_within_octave_tet12_non_wrapping() as isize
+                - rhs.semitones_tet12()
+                - (letter.semitones_within_octave_tet12() as isize
+                    - if goes_into_previous_octave { 12 } else { 0 }),
+        );
+
+        Self { letter, accidental }
     }
 }
 
