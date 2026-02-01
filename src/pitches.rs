@@ -117,6 +117,23 @@ impl Sub for Letter {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum AccidentalSign {
+    Flat,
+    Natural,
+    Sharp,
+}
+
+impl Display for AccidentalSign {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Sharp => write!(f, "#"),
+            Self::Natural => write!(f, "{}", if f.alternate() { "♮" } else { "" }),
+            Self::Flat => write!(f, "b"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Accidental {
     Flat(NonZeroUsize),
@@ -180,6 +197,14 @@ impl Accidental {
             )),
         }
     }
+
+    pub fn sign(&self) -> AccidentalSign {
+        match self {
+            Self::Flat(_) => AccidentalSign::Flat,
+            Self::Natural => AccidentalSign::Natural,
+            Self::Sharp(_) => AccidentalSign::Sharp,
+        }
+    }
 }
 
 impl PartialOrd for Accidental {
@@ -197,15 +222,15 @@ impl Ord for Accidental {
 impl Display for Accidental {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Accidental::Sharp(times) => {
+            Self::Sharp(times) => {
                 if times.get() % 2 == 1 {
                     write!(f, "#")?;
                 }
 
                 write!(f, "{}", "x".repeat(times.get() / 2))
             }
-            Accidental::Natural => write!(f, "{}", if f.alternate() { "♮" } else { "" }),
-            Accidental::Flat(times) => write!(f, "{}", "b".repeat(times.get())),
+            Self::Natural => write!(f, "{}", if f.alternate() { "♮" } else { "" }),
+            Self::Flat(times) => write!(f, "{}", "b".repeat(times.get())),
         }
     }
 }
