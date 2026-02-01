@@ -890,6 +890,14 @@ impl UnorderedIntervalNumber {
         }
     }
 
+    pub fn is_simple(&self) -> bool {
+        self.octaves == 0
+    }
+
+    pub fn is_compound(&self) -> bool {
+        !self.is_simple()
+    }
+
     pub fn checked_sub(self, rhs: Self) -> Result<Self, ()> {
         let simple = self.simple.wrapping_sub(rhs.simple);
 
@@ -1088,6 +1096,14 @@ impl UnorderedInterval {
         }
     }
 
+    pub fn is_simple(&self) -> bool {
+        self.octaves == 0
+    }
+
+    pub fn is_compound(&self) -> bool {
+        !self.is_simple()
+    }
+
     pub fn checked_sub(self, rhs: Self) -> Result<Self, ()> {
         let simple = self.simple.wrapping_sub(rhs.simple);
 
@@ -1227,6 +1243,16 @@ pub struct OrderedIntervalNumber {
     pub unordered: UnorderedIntervalNumber,
 }
 
+impl OrderedIntervalNumber {
+    pub fn is_simple(&self) -> bool {
+        self.unordered.is_simple()
+    }
+
+    pub fn is_compound(&self) -> bool {
+        self.unordered.is_compound()
+    }
+}
+
 impl Display for OrderedIntervalNumber {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Self {
@@ -1301,6 +1327,14 @@ impl OrderedInterval {
 
     pub fn quality(&self) -> IntervalQuality {
         self.unordered.quality()
+    }
+
+    pub fn is_simple(&self) -> bool {
+        self.unordered.is_simple()
+    }
+
+    pub fn is_compound(&self) -> bool {
+        self.unordered.is_compound()
     }
 
     pub const fn augment(self) -> Self {
