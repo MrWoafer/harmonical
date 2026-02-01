@@ -64,6 +64,11 @@ jobs:
   everything:
     needs: [build, tests, docs, fmt, clippy]
     runs-on: ubuntu-latest
+    if: ${{ always() }}
     steps:
     - name: CI passed
-      run: echo "Everything in CI has passed"
+      shell: bash
+      env:
+        NEEDS_RESULTS: ${{ toJSON(needs.*.result) }}
+      run:
+        jq -e '.|map(select(.!="success"))|(.==[])' <<<"${NEEDS_RESULTS}"
