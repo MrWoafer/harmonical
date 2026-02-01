@@ -1195,6 +1195,15 @@ pub enum IntervalDirection {
     Ascending,
 }
 
+impl IntervalDirection {
+    pub fn sign(&self) -> isize {
+        match self {
+            Self::Descending => -1,
+            Self::Ascending => 1,
+        }
+    }
+}
+
 impl Display for IntervalDirection {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if f.alternate() {

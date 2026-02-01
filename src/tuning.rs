@@ -1,7 +1,7 @@
 use crate::{
     intervals::{
-        IntervalDirection, MajorMinorIntervalQuality, OrderedInterval, PerfectIntervalQuality,
-        UnorderedInterval, UnorderedSimpleInterval,
+        MajorMinorIntervalQuality, OrderedInterval, PerfectIntervalQuality, UnorderedInterval,
+        UnorderedSimpleInterval,
     },
     pitches::Pitch,
 };
@@ -111,12 +111,7 @@ impl SemitonesTET12 for OrderedInterval {
             unordered,
         } = self;
 
-        let sign = match direction {
-            IntervalDirection::Descending => -1,
-            IntervalDirection::Ascending => 1,
-        };
-
-        sign * unordered.semitones_tet12()
+        direction.sign() * unordered.semitones_tet12()
     }
 }
 
