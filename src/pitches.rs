@@ -58,6 +58,21 @@ impl Letter {
             Self::B => 11,
         }
     }
+
+    pub fn wrapping_add(self, rhs: UnorderedSimpleIntervalNumber) -> Self {
+        Self::try_from_index_within_octave(
+            (self.index_within_octave() + rhs.zero_based()).rem_euclid(7),
+        )
+        .expect("index should be in valid range")
+    }
+
+    pub fn wrapping_sub(self, rhs: UnorderedSimpleIntervalNumber) -> Self {
+        Self::try_from_index_within_octave(
+            (self.index_within_octave() as isize - rhs.zero_based() as isize).rem_euclid(7)
+                as usize,
+        )
+        .expect("index should be in valid range")
+    }
 }
 
 impl Display for Letter {

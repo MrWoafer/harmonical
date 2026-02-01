@@ -9,7 +9,7 @@ use paste::paste;
 
 use crate::{
     enharmonic::Enharmonic,
-    pitches::{Accidental, Letter, Pitch, PitchClass},
+    pitches::{Accidental, Pitch, PitchClass},
     tuning::{SemitonesTET12, TET12},
 };
 
@@ -460,29 +460,6 @@ impl Display for UnorderedSimpleIntervalNumber {
     }
 }
 
-impl Add<UnorderedSimpleIntervalNumber> for Letter {
-    type Output = Self;
-
-    fn add(self, rhs: UnorderedSimpleIntervalNumber) -> Self::Output {
-        Self::try_from_index_within_octave(
-            (self.index_within_octave() + rhs.zero_based()).rem_euclid(7),
-        )
-        .expect("index should be in valid range")
-    }
-}
-
-impl Sub<UnorderedSimpleIntervalNumber> for Letter {
-    type Output = Self;
-
-    fn sub(self, rhs: UnorderedSimpleIntervalNumber) -> Self::Output {
-        Self::try_from_index_within_octave(
-            (self.index_within_octave() as isize - rhs.zero_based() as isize).rem_euclid(7)
-                as usize,
-        )
-        .expect("index should be in valid range")
-    }
-}
-
 impl Sub for UnorderedSimpleIntervalNumber {
     type Output = Self;
 
@@ -768,7 +745,7 @@ impl Add<UnorderedSimpleInterval> for PitchClass {
     type Output = Self;
 
     fn add(self, rhs: UnorderedSimpleInterval) -> Self::Output {
-        let letter = self.letter + rhs.interval_number();
+        let letter = self.letter.wrapping_add(rhs.interval_number());
 
         let goes_into_next_octave = letter < self.letter;
 
@@ -786,7 +763,7 @@ impl Sub<UnorderedSimpleInterval> for PitchClass {
     type Output = Self;
 
     fn sub(self, rhs: UnorderedSimpleInterval) -> Self::Output {
-        let letter = self.letter - rhs.interval_number();
+        let letter = self.letter.wrapping_sub(rhs.interval_number());
 
         let goes_into_previous_octave = letter > self.letter;
 
