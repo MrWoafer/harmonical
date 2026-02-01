@@ -594,33 +594,13 @@ impl UnorderedSimpleInterval {
     }
 
     pub fn checked_sub(self, rhs: Self) -> Result<Self, ()> {
-        let interval_number = self.interval_number().checked_sub(rhs.interval_number())?;
+        let wrapping_sub = self.wrapping_sub(rhs);
 
-        let semitones_tet12 = self.semitones_tet12() - rhs.semitones_tet12();
-
-        Ok(match interval_number {
-            UnorderedSimpleIntervalNumber::Unison => {
-                Self::Unison(PerfectIntervalQuality::from_index(semitones_tet12))
-            }
-            UnorderedSimpleIntervalNumber::Second => {
-                Self::Second(MajorMinorIntervalQuality::from_index(semitones_tet12 - 1))
-            }
-            UnorderedSimpleIntervalNumber::Third => {
-                Self::Third(MajorMinorIntervalQuality::from_index(semitones_tet12 - 3))
-            }
-            UnorderedSimpleIntervalNumber::Fourth => {
-                Self::Fourth(PerfectIntervalQuality::from_index(semitones_tet12 - 5))
-            }
-            UnorderedSimpleIntervalNumber::Fifth => {
-                Self::Fifth(PerfectIntervalQuality::from_index(semitones_tet12 - 7))
-            }
-            UnorderedSimpleIntervalNumber::Sixth => {
-                Self::Sixth(MajorMinorIntervalQuality::from_index(semitones_tet12 - 8))
-            }
-            UnorderedSimpleIntervalNumber::Seventh => {
-                Self::Seventh(MajorMinorIntervalQuality::from_index(semitones_tet12 - 10))
-            }
-        })
+        if wrapping_sub.interval_number() > self.interval_number() {
+            Err(())
+        } else {
+            Ok(wrapping_sub)
+        }
     }
 
     pub fn wrapping_sub(self, rhs: Self) -> Self {
