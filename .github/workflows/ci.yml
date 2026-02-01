@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        profile: [dev, release]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+    - name: Build crates
+      run: cargo build --profile ${{ matrix.profile }} --verbose
+
+  tests:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        profile: [dev, release]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+    - name: Run tests
+      run: cargo test --profile ${{ matrix.profile }} --verbose
+
+  docs:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+    - name: Build docs
+      run: cargo doc --no-deps --all-features --verbose
+
+  fmt:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+    - name: Check formatting
+      run: cargo fmt --all --check --verbose
+
+  clippy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+    - name: Run Clippy
+      run: cargo clippy --all-targets --all-features --verbose
+
+  everything:
+    needs: [build, tests, docs, fmt, clippy]
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+    - name: CI passed
+      shell: bash
+      env:
+        NEEDS_RESULTS: ${{ toJSON(needs.*.result) }}
+      run:
+        jq -e '.|map(select(.!="success"))|(.==[])' <<<"${NEEDS_RESULTS}"
