@@ -401,6 +401,18 @@ impl UnorderedSimpleIntervalNumber {
         })
         .expect("should be in valid range")
     }
+
+    pub fn invert(self) -> Self {
+        match self {
+            Self::Unison => Self::Unison,
+            Self::Second => Self::Seventh,
+            Self::Third => Self::Sixth,
+            Self::Fourth => Self::Fifth,
+            Self::Fifth => Self::Fourth,
+            Self::Sixth => Self::Third,
+            Self::Seventh => Self::Second,
+        }
+    }
 }
 
 impl Display for UnorderedSimpleIntervalNumber {
@@ -647,6 +659,18 @@ impl UnorderedSimpleInterval {
             UnorderedSimpleIntervalNumber::Seventh => {
                 Self::Seventh(MajorMinorIntervalQuality::from_index(semitones_tet12 - 10))
             }
+        }
+    }
+
+    pub fn invert(self) -> Self {
+        match self {
+            Self::Unison(quality) => Self::Unison(quality.invert()),
+            Self::Second(quality) => Self::Seventh(quality.invert()),
+            Self::Third(quality) => Self::Sixth(quality.invert()),
+            Self::Fourth(quality) => Self::Fifth(quality.invert()),
+            Self::Fifth(quality) => Self::Fourth(quality.invert()),
+            Self::Sixth(quality) => Self::Third(quality.invert()),
+            Self::Seventh(quality) => Self::Second(quality.invert()),
         }
     }
 }
@@ -2311,5 +2335,26 @@ mod tests {
     #[quickcheck]
     fn add_ordered_interval_neg_distributes(a: OrderedInterval, b: OrderedInterval) {
         assert_eq!(-(a + b), (-a) + (-b));
+    }
+
+    #[quickcheck]
+    fn unordered_simple_interval_invert(interval: UnorderedSimpleInterval) {
+        assert_eq!(
+            interval.wrapping_add(interval.invert()),
+            UnorderedSimpleInterval::PERFECT_UNISON
+        );
+
+        assert_eq!(
+            interval.invert(),
+            UnorderedSimpleInterval::PERFECT_UNISON.wrapping_sub(interval)
+        );
+    }
+
+    #[quickcheck]
+    fn unordered_simple_interval_invert_interval_number(interval: UnorderedSimpleInterval) {
+        assert_eq!(
+            interval.invert().interval_number(),
+            interval.interval_number().invert()
+        );
     }
 }
