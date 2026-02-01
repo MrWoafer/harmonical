@@ -861,6 +861,20 @@ impl UnorderedIntervalNumber {
         }
     }
 
+    pub const fn ascending(self) -> OrderedIntervalNumber {
+        OrderedIntervalNumber {
+            direction: IntervalDirection::Ascending,
+            unordered: self,
+        }
+    }
+
+    pub const fn descending(self) -> OrderedIntervalNumber {
+        OrderedIntervalNumber {
+            direction: IntervalDirection::Descending,
+            unordered: self,
+        }
+    }
+
     pub fn checked_sub(self, rhs: Self) -> Result<Self, ()> {
         let simple = self.simple.wrapping_sub(rhs.simple);
 
@@ -1254,6 +1268,42 @@ impl Display for OrderedIntervalNumber {
     }
 }
 
+impl Add for OrderedIntervalNumber {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        if self.unordered >= rhs.unordered {
+            (self.unordered - rhs.unordered).ascending()
+        } else {
+            (rhs.unordered - self.unordered).descending()
+        }
+    }
+}
+
+impl Sub for OrderedIntervalNumber {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        self + (-rhs)
+    }
+}
+
+impl Neg for OrderedIntervalNumber {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        let Self {
+            direction,
+            unordered,
+        } = self;
+
+        Self {
+            direction: -direction,
+            unordered,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Eq)]
 pub struct OrderedInterval {
     pub direction: IntervalDirection,
@@ -1464,6 +1514,43 @@ impl Sub<OrderedInterval> for Pitch {
             IntervalDirection::Descending => self + unordered,
             IntervalDirection::Ascending => self - unordered,
         }
+    }
+}
+
+impl Add for OrderedInterval {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match (self.direction, rhs.direction) {
+            (IntervalDirection::Descending, IntervalDirection::Descending) => {
+                (self.unordered + rhs.unordered).descending()
+            }
+            (IntervalDirection::Descending, IntervalDirection::Ascending) => {
+                if rhs.unordered >= self.unordered {
+                    (rhs.unordered - self.unordered).ascending()
+                } else {
+                    (self.unordered - rhs.unordered).descending()
+                }
+            }
+            (IntervalDirection::Ascending, IntervalDirection::Descending) => {
+                if self.unordered >= rhs.unordered {
+                    (self.unordered - rhs.unordered).ascending()
+                } else {
+                    (rhs.unordered - self.unordered).descending()
+                }
+            }
+            (IntervalDirection::Ascending, IntervalDirection::Ascending) => {
+                (self.unordered + rhs.unordered).ascending()
+            }
+        }
+    }
+}
+
+impl Sub for OrderedInterval {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        self + (-rhs)
     }
 }
 
@@ -2094,5 +2181,141 @@ mod tests {
     #[quickcheck]
     fn unordered_interval_sub_self(interval: UnorderedInterval) {
         assert_eq!(interval - interval, UnorderedInterval::PERFECT_UNISON);
+    }
+
+    #[test]
+    fn add_ordered_interval_examples() {
+        assert_eq!(
+            UnorderedInterval::MAJOR_THIRD.ascending() + UnorderedInterval::MINOR_THIRD.ascending(),
+            UnorderedInterval::PERFECT_FIFTH.ascending()
+        );
+
+        assert_eq!(
+            UnorderedInterval::PERFECT_FIFTH.ascending()
+                + UnorderedInterval::PERFECT_FOURTH.ascending(),
+            UnorderedInterval::PERFECT_OCTAVE.ascending()
+        );
+
+        assert_eq!(
+            UnorderedInterval::MAJOR_NINTH.descending()
+                + UnorderedInterval::AUGMENTED_SIXTH.descending(),
+            UnorderedInterval::AUGMENTED_FOURTEENTH.descending()
+        );
+
+        assert_eq!(
+            UnorderedInterval::MAJOR_NINTH.ascending()
+                + UnorderedInterval::DIMINISHED_THIRD.descending(),
+            UnorderedInterval::AUGMENTED_SEVENTH.ascending()
+        );
+
+        assert_eq!(
+            UnorderedInterval::MAJOR_SECOND.ascending()
+                + UnorderedInterval::DIMINISHED_THIRD.descending(),
+            UnorderedInterval::DIMINISHED_SECOND.descending()
+        );
+
+        assert_eq!(
+            UnorderedInterval::PERFECT_FOURTH.descending()
+                + UnorderedInterval::MAJOR_SECOND.ascending(),
+            UnorderedInterval::MINOR_THIRD.descending()
+        );
+
+        assert_eq!(
+            UnorderedInterval::PERFECT_OCTAVE.descending()
+                + UnorderedInterval::PERFECT_DOUBLE_OCTAVE.ascending(),
+            UnorderedInterval::PERFECT_OCTAVE.ascending()
+        );
+    }
+
+    #[test]
+    fn sub_ordered_interval_examples() {
+        assert_eq!(
+            UnorderedInterval::PERFECT_FIFTH.ascending()
+                - UnorderedInterval::MINOR_THIRD.ascending(),
+            UnorderedInterval::MAJOR_THIRD.ascending()
+        );
+
+        assert_eq!(
+            UnorderedInterval::PERFECT_UNISON.ascending()
+                - UnorderedInterval::AUGMENTED_UNISON.ascending(),
+            UnorderedInterval::DIMINISHED_UNISON.ascending()
+        );
+    }
+
+    #[quickcheck]
+    fn add_ordered_interval_semitones_tet12(a: OrderedInterval, b: OrderedInterval) {
+        assert_eq!(
+            (a + b).semitones_tet12(),
+            a.semitones_tet12() + b.semitones_tet12()
+        );
+    }
+
+    #[quickcheck]
+    fn sub_ordered_interval_semitones_tet12(a: OrderedInterval, b: OrderedInterval) {
+        assert_eq!(
+            (a - b).semitones_tet12(),
+            a.semitones_tet12() - b.semitones_tet12()
+        );
+    }
+
+    #[quickcheck]
+    fn add_ordered_interval_preserves_enharmonic_equivalence(
+        a: OrderedInterval,
+        b: OrderedInterval,
+        c: OrderedInterval,
+        d: OrderedInterval,
+    ) {
+        match (a.enharmonic(&b), c.enharmonic(&d)) {
+            (true, true) => {
+                assert_enharmonic!(a + b, c + d);
+            }
+            (true, false) | (false, true) => {
+                assert_not_enharmonic!(a + b, c + d);
+            }
+            (false, false) => {}
+        }
+    }
+
+    #[quickcheck]
+    fn add_ordered_interval_associativity(
+        a: OrderedInterval,
+        b: OrderedInterval,
+        c: OrderedInterval,
+    ) {
+        assert_eq!((a + b) + c, a + (b + c));
+    }
+
+    #[quickcheck]
+    fn add_ordered_interval_commutativity(a: OrderedInterval, b: OrderedInterval) {
+        assert_eq!(a + b, b + a);
+    }
+
+    #[quickcheck]
+    fn pitch_add_ordered_interval_compatibility(
+        pitch: Pitch,
+        interval_1: OrderedInterval,
+        interval_2: OrderedInterval,
+    ) {
+        assert_eq!(
+            (pitch + interval_1) + interval_2,
+            pitch + (interval_1 + interval_2)
+        );
+    }
+
+    #[quickcheck]
+    fn add_and_sub_ordered_interval_are_inverses(a: OrderedInterval, b: OrderedInterval) {
+        assert_eq!((a + b) - b, a);
+        assert_eq!((a - b) + b, a);
+    }
+
+    #[quickcheck]
+    fn add_and_sub_ordered_interval_ascending_descending(a: OrderedInterval, b: UnorderedInterval) {
+        assert_eq!(a + b.ascending(), a - b.descending());
+        assert_eq!(a + b.descending(), a - b.ascending());
+    }
+
+    #[quickcheck]
+    fn add_ordered_interval_neg_distributes(a: OrderedInterval, b: OrderedInterval) {
+        assert_eq!(-(a + b), (-a) + (-b));
     }
 }
