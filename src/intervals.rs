@@ -1,7 +1,7 @@
 use std::{
     fmt::Display,
     num::NonZeroUsize,
-    ops::{Add, Neg, Sub},
+    ops::{Add, Mul, Neg, Sub},
 };
 
 use num2words::Num2Words;
@@ -402,6 +402,31 @@ impl UnorderedSimpleIntervalNumber {
         .expect("should be in valid range")
     }
 
+    pub fn checked_mul(self, rhs: usize) -> Result<Self, ()> {
+        let (wrapping_mul, extra_octaves) = self.wrapping_mul_with_octaves(rhs);
+
+        if extra_octaves == 0 {
+            Ok(wrapping_mul)
+        } else {
+            Err(())
+        }
+    }
+
+    pub fn wrapping_mul(self, rhs: usize) -> Self {
+        let (wrapping_mul, _) = self.wrapping_mul_with_octaves(rhs);
+
+        wrapping_mul
+    }
+
+    fn wrapping_mul_with_octaves(self, rhs: usize) -> (Self, usize) {
+        let wrapping_mul = Self::try_from_zero_based((self.zero_based() * rhs).rem_euclid(7))
+            .expect("should be in valid range");
+
+        let extra_octaves = (self.zero_based() * rhs) / 7;
+
+        (wrapping_mul, extra_octaves)
+    }
+
     pub fn invert(self) -> Self {
         match self {
             Self::Unison => Self::Unison,
@@ -657,6 +682,55 @@ impl UnorderedSimpleInterval {
                 Self::Seventh(MajorMinorIntervalQuality::from_index(semitones_tet12 - 10))
             }
         }
+    }
+
+    pub fn checked_mul(self, rhs: usize) -> Result<Self, ()> {
+        let (wrapping_mul, extra_octaves) = self.wrapping_mul_with_octaves(rhs);
+
+        if extra_octaves == 0 {
+            Ok(wrapping_mul)
+        } else {
+            Err(())
+        }
+    }
+
+    pub fn wrapping_mul(self, rhs: usize) -> Self {
+        let (wrapping_mul, _) = self.wrapping_mul_with_octaves(rhs);
+
+        wrapping_mul
+    }
+
+    fn wrapping_mul_with_octaves(self, rhs: usize) -> (Self, usize) {
+        let (interval_number, extra_octaves) =
+            self.interval_number().wrapping_mul_with_octaves(rhs);
+
+        let semitones_tet12 = self.semitones_tet12() * rhs as isize - extra_octaves as isize * 12;
+
+        let wrapping_mul = match interval_number {
+            UnorderedSimpleIntervalNumber::Unison => {
+                Self::Unison(PerfectIntervalQuality::from_index(semitones_tet12))
+            }
+            UnorderedSimpleIntervalNumber::Second => {
+                Self::Second(MajorMinorIntervalQuality::from_index(semitones_tet12 - 1))
+            }
+            UnorderedSimpleIntervalNumber::Third => {
+                Self::Third(MajorMinorIntervalQuality::from_index(semitones_tet12 - 3))
+            }
+            UnorderedSimpleIntervalNumber::Fourth => {
+                Self::Fourth(PerfectIntervalQuality::from_index(semitones_tet12 - 5))
+            }
+            UnorderedSimpleIntervalNumber::Fifth => {
+                Self::Fifth(PerfectIntervalQuality::from_index(semitones_tet12 - 7))
+            }
+            UnorderedSimpleIntervalNumber::Sixth => {
+                Self::Sixth(MajorMinorIntervalQuality::from_index(semitones_tet12 - 8))
+            }
+            UnorderedSimpleIntervalNumber::Seventh => {
+                Self::Seventh(MajorMinorIntervalQuality::from_index(semitones_tet12 - 10))
+            }
+        };
+
+        (wrapping_mul, extra_octaves)
     }
 
     pub fn invert(self) -> Self {
@@ -967,6 +1041,26 @@ impl Sub for UnorderedIntervalNumber {
     }
 }
 
+impl Mul<usize> for UnorderedIntervalNumber {
+    type Output = Self;
+
+    fn mul(self, rhs: usize) -> Self::Output {
+        let (simple, extra_octaves) = self.simple.wrapping_mul_with_octaves(rhs);
+
+        let octaves = self.octaves * rhs + extra_octaves;
+
+        Self { octaves, simple }
+    }
+}
+
+impl Mul<UnorderedIntervalNumber> for usize {
+    type Output = UnorderedIntervalNumber;
+
+    fn mul(self, rhs: UnorderedIntervalNumber) -> Self::Output {
+        rhs * self
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct UnorderedInterval {
     pub octaves: usize,
@@ -1195,6 +1289,26 @@ impl Sub for UnorderedInterval {
     }
 }
 
+impl Mul<usize> for UnorderedInterval {
+    type Output = Self;
+
+    fn mul(self, rhs: usize) -> Self::Output {
+        let (simple, extra_octaves) = self.simple.wrapping_mul_with_octaves(rhs);
+
+        let octaves = self.octaves * rhs + extra_octaves;
+
+        Self { octaves, simple }
+    }
+}
+
+impl Mul<UnorderedInterval> for usize {
+    type Output = UnorderedInterval;
+
+    fn mul(self, rhs: UnorderedInterval) -> Self::Output {
+        rhs * self
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum IntervalDirection {
     Descending,
@@ -1303,6 +1417,37 @@ impl Neg for OrderedIntervalNumber {
             direction: -direction,
             unordered,
         }
+    }
+}
+
+impl Mul<isize> for OrderedIntervalNumber {
+    type Output = Self;
+
+    fn mul(self, rhs: isize) -> Self::Output {
+        let Self {
+            direction,
+            unordered,
+        } = self;
+
+        if rhs >= 0 {
+            Self {
+                direction,
+                unordered: unordered * rhs as usize,
+            }
+        } else {
+            Self {
+                direction,
+                unordered: unordered * (-rhs as usize),
+            }
+        }
+    }
+}
+
+impl Mul<OrderedIntervalNumber> for isize {
+    type Output = OrderedIntervalNumber;
+
+    fn mul(self, rhs: OrderedIntervalNumber) -> Self::Output {
+        rhs * self
     }
 }
 
@@ -1577,6 +1722,37 @@ impl Neg for OrderedInterval {
             direction: -direction,
             unordered,
         }
+    }
+}
+
+impl Mul<isize> for OrderedInterval {
+    type Output = Self;
+
+    fn mul(self, rhs: isize) -> Self::Output {
+        let Self {
+            direction,
+            unordered,
+        } = self;
+
+        if rhs >= 0 {
+            Self {
+                direction,
+                unordered: unordered * rhs as usize,
+            }
+        } else {
+            Self {
+                direction: -direction,
+                unordered: unordered * (-rhs as usize),
+            }
+        }
+    }
+}
+
+impl Mul<OrderedInterval> for isize {
+    type Output = OrderedInterval;
+
+    fn mul(self, rhs: OrderedInterval) -> Self::Output {
+        rhs * self
     }
 }
 
@@ -2280,5 +2456,35 @@ mod tests {
             interval.invert().interval_number(),
             interval.interval_number().invert()
         );
+    }
+
+    #[quickcheck]
+    fn unordered_interval_mul_usize(interval: UnorderedInterval, times: usize) {
+        let times = times % 100;
+
+        let mut expected_output = UnorderedInterval::P1;
+        for _ in 0..times {
+            expected_output = expected_output + interval;
+        }
+
+        assert_eq!(interval * times, expected_output);
+    }
+
+    #[quickcheck]
+    fn ordered_interval_mul_isize(interval: OrderedInterval, times: isize) {
+        let times = times % 100;
+
+        let mut expected_output = UnorderedInterval::P1.ascending();
+        if times >= 0 {
+            for _ in 0..times {
+                expected_output = expected_output + interval;
+            }
+        } else {
+            for _ in 0..-times {
+                expected_output = expected_output - interval;
+            }
+        }
+
+        assert_eq!(interval * times, expected_output);
     }
 }
