@@ -523,45 +523,21 @@ mod tests {
 
     #[test]
     fn pitch_sub_examples() {
-        assert_eq!(
-            Pitch::A4 - Pitch::A4,
-            UnorderedInterval::PERFECT_UNISON.ascending()
-        );
+        assert_eq!(Pitch::A4 - Pitch::A4, UnorderedInterval::P1.ascending());
 
-        assert_eq!(
-            Pitch::A4 - Pitch::A4,
-            UnorderedInterval::PERFECT_UNISON.descending()
-        );
+        assert_eq!(Pitch::A4 - Pitch::A4, UnorderedInterval::P1.descending());
 
-        assert_eq!(
-            Pitch::B3 - Pitch::A3,
-            UnorderedInterval::MAJOR_SECOND.ascending()
-        );
+        assert_eq!(Pitch::B3 - Pitch::A3, UnorderedInterval::M2.ascending());
 
-        assert_eq!(
-            Pitch::F2 - Pitch::E2,
-            UnorderedInterval::MINOR_SECOND.ascending()
-        );
+        assert_eq!(Pitch::F2 - Pitch::E2, UnorderedInterval::m2.ascending());
 
-        assert_eq!(
-            Pitch::E5 - Pitch::F4,
-            UnorderedInterval::MAJOR_SEVENTH.ascending()
-        );
+        assert_eq!(Pitch::E5 - Pitch::F4, UnorderedInterval::M7.ascending());
 
-        assert_eq!(
-            Pitch::G1 - Pitch::D1,
-            UnorderedInterval::PERFECT_FOURTH.ascending()
-        );
+        assert_eq!(Pitch::G1 - Pitch::D1, UnorderedInterval::P4.ascending());
 
-        assert_eq!(
-            Pitch::Ab6 - Pitch::E6,
-            UnorderedInterval::DIMINISHED_FOURTH.ascending()
-        );
+        assert_eq!(Pitch::Ab6 - Pitch::E6, UnorderedInterval::d4.ascending());
 
-        assert_eq!(
-            Pitch::Gs7 - Pitch::Gb7,
-            UnorderedInterval::DOUBLY_AUGMENTED_UNISON.ascending()
-        );
+        assert_eq!(Pitch::Gs7 - Pitch::Gb7, UnorderedInterval::AA1.ascending());
 
         assert_eq!(
             Pitch::Cbb4 - Pitch::Cx4,
@@ -593,15 +569,9 @@ mod tests {
             .ascending()
         );
 
-        assert_eq!(
-            Pitch::Es5 - Pitch::As4,
-            UnorderedInterval::PERFECT_FIFTH.ascending()
-        );
+        assert_eq!(Pitch::Es5 - Pitch::As4, UnorderedInterval::P5.ascending());
 
-        assert_eq!(
-            Pitch::Es5 - Pitch::As3,
-            UnorderedInterval::PERFECT_TWELFTH.ascending()
-        );
+        assert_eq!(Pitch::Es5 - Pitch::As3, UnorderedInterval::P12.ascending());
     }
 
     #[quickcheck]

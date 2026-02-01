@@ -479,54 +479,51 @@ pub enum UnorderedSimpleInterval {
 }
 
 macro_rules! make_unordered_simple_interval_consts {
-    (Perfect, $number:ident) => {
+    (Perfect, $variant:ident, $number:literal) => {
         paste! {
-            pub const [< DOUBLY_AUGMENTED_$number:upper >]: Self =
-                Self::$number(PerfectIntervalQuality::Augmented(NonZeroUsize::new(2).unwrap()));
-            pub const [< AUGMENTED_$number:upper >]: Self =
-                Self::$number(PerfectIntervalQuality::Augmented(NonZeroUsize::new(1).unwrap()));
-            pub const [< PERFECT_$number:upper >]: Self =
-                Self::$number(PerfectIntervalQuality::Perfect);
-            pub const [< DIMINISHED_$number:upper >]: Self =
-                Self::$number(PerfectIntervalQuality::Diminished(NonZeroUsize::new(1).unwrap()));
-            pub const [< DOUBLY_DIMINISHED_$number:upper >]: Self =
-                Self::$number(PerfectIntervalQuality::Diminished(NonZeroUsize::new(2).unwrap()));
+            pub const [< AA$number >]: Self =
+                Self::$variant(PerfectIntervalQuality::Augmented(NonZeroUsize::new(2).unwrap()));
+            pub const [< A$number >]: Self =
+                Self::$variant(PerfectIntervalQuality::Augmented(NonZeroUsize::new(1).unwrap()));
+            pub const [< P$number >]: Self =
+                Self::$variant(PerfectIntervalQuality::Perfect);
+            #[expect(non_upper_case_globals)]
+            pub const [< d$number >]: Self =
+                Self::$variant(PerfectIntervalQuality::Diminished(NonZeroUsize::new(1).unwrap()));
+            #[expect(non_upper_case_globals)]
+            pub const [< dd$number >]: Self =
+                Self::$variant(PerfectIntervalQuality::Diminished(NonZeroUsize::new(2).unwrap()));
         }
     };
-    (MajorMinor, $number:ident) => {
+    (MajorMinor, $variant:ident, $number:literal) => {
         paste! {
-            pub const [< DOUBLY_AUGMENTED_$number:upper >]: Self =
-                Self::$number(MajorMinorIntervalQuality::Augmented(NonZeroUsize::new(2).unwrap()));
-            pub const [< AUGMENTED_$number:upper >]: Self =
-                Self::$number(MajorMinorIntervalQuality::Augmented(NonZeroUsize::new(1).unwrap()));
-            pub const [< MAJOR_$number:upper >]: Self =
-                Self::$number(MajorMinorIntervalQuality::Major);
-            pub const [< MINOR_$number:upper >]: Self =
-                Self::$number(MajorMinorIntervalQuality::Minor);
-            pub const [< DIMINISHED_$number:upper >]: Self =
-                Self::$number(MajorMinorIntervalQuality::Diminished(NonZeroUsize::new(1).unwrap()));
-            pub const [< DOUBLY_DIMINISHED_$number:upper >]: Self =
-                Self::$number(MajorMinorIntervalQuality::Diminished(NonZeroUsize::new(2).unwrap()));
+            pub const [< AA$number >]: Self =
+                Self::$variant(MajorMinorIntervalQuality::Augmented(NonZeroUsize::new(2).unwrap()));
+            pub const [< A$number >]: Self =
+                Self::$variant(MajorMinorIntervalQuality::Augmented(NonZeroUsize::new(1).unwrap()));
+            pub const [< M$number >]: Self =
+                Self::$variant(MajorMinorIntervalQuality::Major);
+            #[expect(non_upper_case_globals)]
+            pub const [< m$number >]: Self =
+                Self::$variant(MajorMinorIntervalQuality::Minor);
+            #[expect(non_upper_case_globals)]
+            pub const [< d$number >]: Self =
+                Self::$variant(MajorMinorIntervalQuality::Diminished(NonZeroUsize::new(1).unwrap()));
+            #[expect(non_upper_case_globals)]
+            pub const [< dd$number >]: Self =
+                Self::$variant(MajorMinorIntervalQuality::Diminished(NonZeroUsize::new(2).unwrap()));
         }
     };
 }
 
 impl UnorderedSimpleInterval {
-    #[doc(alias = "HALF_STEP")]
-    pub const SEMITONE: Self = Self::MINOR_SECOND;
-
-    #[doc(alias = "WHOLE_TONE")]
-    #[doc(alias = "STEP")]
-    #[doc(alias = "WHOLE_STEP")]
-    pub const TONE: Self = Self::MAJOR_SECOND;
-
-    make_unordered_simple_interval_consts!(Perfect, Unison);
-    make_unordered_simple_interval_consts!(MajorMinor, Second);
-    make_unordered_simple_interval_consts!(MajorMinor, Third);
-    make_unordered_simple_interval_consts!(Perfect, Fourth);
-    make_unordered_simple_interval_consts!(Perfect, Fifth);
-    make_unordered_simple_interval_consts!(MajorMinor, Sixth);
-    make_unordered_simple_interval_consts!(MajorMinor, Seventh);
+    make_unordered_simple_interval_consts!(Perfect, Unison, 1);
+    make_unordered_simple_interval_consts!(MajorMinor, Second, 2);
+    make_unordered_simple_interval_consts!(MajorMinor, Third, 3);
+    make_unordered_simple_interval_consts!(Perfect, Fourth, 4);
+    make_unordered_simple_interval_consts!(Perfect, Fifth, 5);
+    make_unordered_simple_interval_consts!(MajorMinor, Sixth, 6);
+    make_unordered_simple_interval_consts!(MajorMinor, Seventh, 7);
 
     pub const fn interval_number(&self) -> UnorderedSimpleIntervalNumber {
         match self {
@@ -969,121 +966,82 @@ pub struct UnorderedInterval {
 }
 
 macro_rules! make_unordered_interval_consts {
-    (Perfect, $ident:ident, $simple:ident, $octaves:literal) => {
+    (Perfect, $number:literal, $simple:literal, $octaves:literal) => {
         paste! {
-            pub const [< DOUBLY_AUGMENTED_$ident:upper >]: Self = Self {
+            pub const [< AA$number >]: Self = Self {
                 octaves: $octaves,
-                simple: UnorderedSimpleInterval::[< DOUBLY_AUGMENTED_$simple:upper >],
+                simple: UnorderedSimpleInterval::[< AA$simple >],
             };
-            pub const [< AUGMENTED_$ident:upper >]: Self = Self {
+            pub const [< A$number >]: Self = Self {
                 octaves: $octaves,
-                simple: UnorderedSimpleInterval::[< AUGMENTED_$simple:upper >],
+                simple: UnorderedSimpleInterval::[< A$simple >],
             };
-            pub const [< PERFECT_$ident:upper >]: Self = Self {
+            pub const [< P$number >]: Self = Self {
                 octaves: $octaves,
-                simple: UnorderedSimpleInterval::[< PERFECT_$simple:upper >],
+                simple: UnorderedSimpleInterval::[< P$simple >],
             };
-            pub const [< DIMINISHED_$ident:upper >]: Self = Self {
+            #[expect(non_upper_case_globals)]
+            pub const [< d$number >]: Self = Self {
                 octaves: $octaves,
-                simple: UnorderedSimpleInterval::[< DIMINISHED_$simple:upper >],
+                simple: UnorderedSimpleInterval::[< d$simple >],
             };
-            pub const [< DOUBLY_DIMINISHED_$ident:upper >]: Self = Self {
+            #[expect(non_upper_case_globals)]
+            pub const [< dd$number >]: Self = Self {
                 octaves: $octaves,
-                simple: UnorderedSimpleInterval::[< DOUBLY_DIMINISHED_$simple:upper >],
+                simple: UnorderedSimpleInterval::[< dd$simple >],
             };
         }
     };
-    (MajorMinor, $ident:ident, $simple:ident, $octaves:literal) => {
+    (MajorMinor, $number:literal, $simple:literal, $octaves:literal) => {
         paste! {
-            pub const [< DOUBLY_AUGMENTED_$ident:upper >]: Self = Self {
+            pub const [< AA$number >]: Self = Self {
                 octaves: $octaves,
-                simple: UnorderedSimpleInterval::[< DOUBLY_AUGMENTED_$simple:upper >],
+                simple: UnorderedSimpleInterval::[< AA$simple >],
             };
-            pub const [< AUGMENTED_$ident:upper >]: Self = Self {
+            pub const [< A$number >]: Self = Self {
                 octaves: $octaves,
-                simple: UnorderedSimpleInterval::[< AUGMENTED_$simple:upper >],
+                simple: UnorderedSimpleInterval::[< A$simple >],
             };
-            pub const [< MAJOR_$ident:upper >]: Self = Self {
+            pub const [< M$number >]: Self = Self {
                 octaves: $octaves,
-                simple: UnorderedSimpleInterval::[< MAJOR_$simple:upper >],
+                simple: UnorderedSimpleInterval::[< M$simple >],
             };
-            pub const [< MINOR_$ident:upper >]: Self = Self {
+            #[expect(non_upper_case_globals)]
+            pub const [< m$number >]: Self = Self {
                 octaves: $octaves,
-                simple: UnorderedSimpleInterval::[< MINOR_$simple:upper >],
+                simple: UnorderedSimpleInterval::[< m$simple >],
             };
-            pub const [< DIMINISHED_$ident:upper >]: Self = Self {
+            #[expect(non_upper_case_globals)]
+            pub const [< d$number >]: Self = Self {
                 octaves: $octaves,
-                simple: UnorderedSimpleInterval::[< DIMINISHED_$simple:upper >],
+                simple: UnorderedSimpleInterval::[< d$simple >],
             };
-            pub const [< DOUBLY_DIMINISHED_$ident:upper >]: Self = Self {
+            #[expect(non_upper_case_globals)]
+            pub const [< dd$number >]: Self = Self {
                 octaves: $octaves,
-                simple: UnorderedSimpleInterval::[< DOUBLY_DIMINISHED_$simple:upper >],
+                simple: UnorderedSimpleInterval::[< dd$simple >],
             };
         }
     };
 }
 
 impl UnorderedInterval {
-    #[doc(alias = "HALF_STEP")]
-    pub const SEMITONE: Self = Self {
-        octaves: 0,
-        simple: UnorderedSimpleInterval::SEMITONE,
-    };
+    make_unordered_interval_consts!(Perfect, 1, 1, 0);
+    make_unordered_interval_consts!(MajorMinor, 2, 2, 0);
+    make_unordered_interval_consts!(MajorMinor, 3, 3, 0);
+    make_unordered_interval_consts!(Perfect, 4, 4, 0);
+    make_unordered_interval_consts!(Perfect, 5, 5, 0);
+    make_unordered_interval_consts!(MajorMinor, 6, 6, 0);
+    make_unordered_interval_consts!(MajorMinor, 7, 7, 0);
 
-    #[doc(alias = "WHOLE_TONE")]
-    #[doc(alias = "STEP")]
-    #[doc(alias = "WHOLE_STEP")]
-    pub const TONE: Self = Self {
-        octaves: 0,
-        simple: UnorderedSimpleInterval::TONE,
-    };
-
-    make_unordered_interval_consts!(Perfect, UNISON, Unison, 0);
-    make_unordered_interval_consts!(MajorMinor, SECOND, Second, 0);
-    make_unordered_interval_consts!(MajorMinor, THIRD, Third, 0);
-    make_unordered_interval_consts!(Perfect, FOURTH, Fourth, 0);
-    make_unordered_interval_consts!(Perfect, FIFTH, Fifth, 0);
-    make_unordered_interval_consts!(MajorMinor, SIXTH, Sixth, 0);
-    make_unordered_interval_consts!(MajorMinor, SEVENTH, Seventh, 0);
-
-    pub const DOUBLY_DIMINISHED_OCTAVE: Self = Self {
-        octaves: 1,
-        simple: UnorderedSimpleInterval::DOUBLY_DIMINISHED_UNISON,
-    };
-
-    pub const DIMINISHED_OCTAVE: Self = Self {
-        octaves: 1,
-        simple: UnorderedSimpleInterval::DIMINISHED_UNISON,
-    };
-
-    #[doc(alias = "OCTAVE")]
-    pub const PERFECT_OCTAVE: Self = Self {
-        octaves: 1,
-        simple: UnorderedSimpleInterval::PERFECT_UNISON,
-    };
-
-    pub const AUGMENTED_OCTAVE: Self = Self {
-        octaves: 1,
-        simple: UnorderedSimpleInterval::AUGMENTED_UNISON,
-    };
-
-    pub const DOUBLY_AUGMENTED_OCTAVE: Self = Self {
-        octaves: 1,
-        simple: UnorderedSimpleInterval::DOUBLY_AUGMENTED_UNISON,
-    };
-
-    make_unordered_interval_consts!(MajorMinor, NINTH, Second, 1);
-    make_unordered_interval_consts!(MajorMinor, TENTH, Third, 1);
-    make_unordered_interval_consts!(Perfect, ELEVENTH, Fourth, 1);
-    make_unordered_interval_consts!(Perfect, TWELFTH, Fifth, 1);
-    make_unordered_interval_consts!(MajorMinor, THIRTEENTH, Sixth, 1);
-    make_unordered_interval_consts!(MajorMinor, FOURTEENTH, Seventh, 1);
-
-    #[doc(alias = "DOUBLE_OCTAVE")]
-    pub const PERFECT_DOUBLE_OCTAVE: Self = Self {
-        octaves: 2,
-        simple: UnorderedSimpleInterval::PERFECT_UNISON,
-    };
+    make_unordered_interval_consts!(Perfect, 8, 1, 1);
+    make_unordered_interval_consts!(MajorMinor, 9, 2, 1);
+    make_unordered_interval_consts!(MajorMinor, 10, 3, 1);
+    make_unordered_interval_consts!(Perfect, 11, 4, 1);
+    make_unordered_interval_consts!(Perfect, 12, 5, 1);
+    make_unordered_interval_consts!(MajorMinor, 13, 6, 1);
+    make_unordered_interval_consts!(MajorMinor, 14, 7, 1);
+    make_unordered_interval_consts!(Perfect, 15, 1, 2);
 
     pub const fn interval_number(&self) -> UnorderedIntervalNumber {
         let Self { octaves, simple } = self;
@@ -1487,8 +1445,8 @@ impl Display for OrderedInterval {
         match self {
             Self {
                 direction: _,
-                unordered: UnorderedInterval::PERFECT_UNISON,
-            } => UnorderedInterval::PERFECT_UNISON.fmt(f),
+                unordered: UnorderedInterval::P1,
+            } => UnorderedInterval::P1.fmt(f),
             Self {
                 direction,
                 unordered,
@@ -1635,115 +1593,115 @@ mod tests {
     #[test]
     fn ordered_interval_unison_equality_examples() {
         assert_eq!(
-            UnorderedInterval::PERFECT_UNISON.ascending(),
-            UnorderedInterval::PERFECT_UNISON.ascending()
+            UnorderedInterval::P1.ascending(),
+            UnorderedInterval::P1.ascending()
         );
         assert_eq!(
-            UnorderedInterval::PERFECT_UNISON.ascending(),
-            UnorderedInterval::PERFECT_UNISON.descending()
+            UnorderedInterval::P1.ascending(),
+            UnorderedInterval::P1.descending()
         );
         assert_eq!(
-            UnorderedInterval::PERFECT_UNISON.descending(),
-            UnorderedInterval::PERFECT_UNISON.ascending()
+            UnorderedInterval::P1.descending(),
+            UnorderedInterval::P1.ascending()
         );
         assert_eq!(
-            UnorderedInterval::PERFECT_UNISON.descending(),
-            UnorderedInterval::PERFECT_UNISON.descending()
+            UnorderedInterval::P1.descending(),
+            UnorderedInterval::P1.descending()
         );
 
         assert_eq!(
-            UnorderedInterval::AUGMENTED_UNISON.ascending(),
-            UnorderedInterval::DIMINISHED_UNISON.descending()
+            UnorderedInterval::A1.ascending(),
+            UnorderedInterval::d1.descending()
         );
         assert_eq!(
-            UnorderedInterval::AUGMENTED_UNISON.descending(),
-            UnorderedInterval::DIMINISHED_UNISON.ascending()
+            UnorderedInterval::A1.descending(),
+            UnorderedInterval::d1.ascending()
         );
         assert_ne!(
-            UnorderedInterval::AUGMENTED_UNISON.ascending(),
-            UnorderedInterval::DIMINISHED_UNISON.ascending()
+            UnorderedInterval::A1.ascending(),
+            UnorderedInterval::d1.ascending()
         );
         assert_ne!(
-            UnorderedInterval::AUGMENTED_UNISON.descending(),
-            UnorderedInterval::DIMINISHED_UNISON.descending()
+            UnorderedInterval::A1.descending(),
+            UnorderedInterval::d1.descending()
         );
     }
 
     #[test]
     fn ordered_interval_ordering_examples() {
         assert_eq!(
-            UnorderedInterval::PERFECT_UNISON
+            UnorderedInterval::P1
                 .ascending()
-                .cmp(&UnorderedInterval::PERFECT_UNISON.ascending()),
+                .cmp(&UnorderedInterval::P1.ascending()),
             std::cmp::Ordering::Equal,
         );
         assert_eq!(
-            UnorderedInterval::DIMINISHED_UNISON
+            UnorderedInterval::d1
                 .ascending()
-                .cmp(&UnorderedInterval::PERFECT_UNISON.ascending()),
+                .cmp(&UnorderedInterval::P1.ascending()),
             std::cmp::Ordering::Less,
         );
         assert_eq!(
-            UnorderedInterval::DIMINISHED_UNISON
+            UnorderedInterval::d1
                 .ascending()
-                .cmp(&UnorderedInterval::AUGMENTED_UNISON.ascending()),
+                .cmp(&UnorderedInterval::A1.ascending()),
             std::cmp::Ordering::Less,
         );
         assert_eq!(
-            UnorderedInterval::DIMINISHED_UNISON
+            UnorderedInterval::d1
                 .descending()
-                .cmp(&UnorderedInterval::AUGMENTED_UNISON.ascending()),
+                .cmp(&UnorderedInterval::A1.ascending()),
             std::cmp::Ordering::Equal,
         );
         assert_eq!(
-            UnorderedInterval::DIMINISHED_UNISON
+            UnorderedInterval::d1
                 .descending()
-                .cmp(&UnorderedInterval::AUGMENTED_UNISON.descending()),
+                .cmp(&UnorderedInterval::A1.descending()),
             std::cmp::Ordering::Greater,
         );
 
         assert_eq!(
-            UnorderedInterval::MAJOR_SECOND
+            UnorderedInterval::M2
                 .descending()
-                .cmp(&UnorderedInterval::PERFECT_UNISON.ascending()),
+                .cmp(&UnorderedInterval::P1.ascending()),
             std::cmp::Ordering::Less,
         );
         assert_eq!(
-            UnorderedInterval::MAJOR_SECOND
+            UnorderedInterval::M2
                 .descending()
-                .cmp(&UnorderedInterval::MAJOR_SECOND.ascending()),
+                .cmp(&UnorderedInterval::M2.ascending()),
             std::cmp::Ordering::Less,
         );
 
         assert_eq!(
-            UnorderedInterval::MAJOR_SECOND
+            UnorderedInterval::M2
                 .ascending()
-                .cmp(&UnorderedInterval::MINOR_THIRD.ascending()),
+                .cmp(&UnorderedInterval::m3.ascending()),
             std::cmp::Ordering::Less,
         );
         assert_eq!(
-            UnorderedInterval::AUGMENTED_FIFTH
+            UnorderedInterval::A5
                 .ascending()
-                .cmp(&UnorderedInterval::MINOR_SIXTH.ascending()),
+                .cmp(&UnorderedInterval::m6.ascending()),
             std::cmp::Ordering::Less,
         );
         assert_eq!(
-            UnorderedInterval::AUGMENTED_FIFTH
+            UnorderedInterval::A5
                 .ascending()
-                .cmp(&UnorderedInterval::DIMINISHED_SIXTH.ascending()),
+                .cmp(&UnorderedInterval::d6.ascending()),
             std::cmp::Ordering::Less,
         );
 
         assert_eq!(
-            UnorderedInterval::MAJOR_THIRD
+            UnorderedInterval::M3
                 .descending()
-                .cmp(&UnorderedInterval::PERFECT_FIFTH.descending()),
+                .cmp(&UnorderedInterval::P5.descending()),
             std::cmp::Ordering::Greater,
         );
         assert_eq!(
-            UnorderedInterval::MAJOR_THIRD
+            UnorderedInterval::M3
                 .descending()
-                .cmp(&UnorderedInterval::DOUBLY_AUGMENTED_FOURTH.descending()),
+                .cmp(&UnorderedInterval::AA4.descending()),
             std::cmp::Ordering::Greater,
         );
     }
@@ -1760,54 +1718,33 @@ mod tests {
 
     #[test]
     fn ordered_interval_display_examples() {
-        assert_eq!(
-            format!("{}", UnorderedInterval::PERFECT_UNISON.ascending()),
-            "P1"
-        );
+        assert_eq!(format!("{}", UnorderedInterval::P1.ascending()), "P1");
+
+        assert_eq!(format!("{}", UnorderedInterval::M9.ascending()), "+M9");
+
+        assert_eq!(format!("{}", UnorderedInterval::m7.descending()), "-m7");
+
+        assert_eq!(format!("{}", UnorderedInterval::A5.descending()), "-A5");
+
+        assert_eq!(format!("{}", UnorderedInterval::dd11.ascending()), "+dd11");
 
         assert_eq!(
-            format!("{}", UnorderedInterval::MAJOR_NINTH.ascending()),
-            "+M9"
-        );
-
-        assert_eq!(
-            format!("{}", UnorderedInterval::MINOR_SEVENTH.descending()),
-            "-m7"
-        );
-
-        assert_eq!(
-            format!("{}", UnorderedInterval::AUGMENTED_FIFTH.descending()),
-            "-A5"
-        );
-
-        assert_eq!(
-            format!(
-                "{}",
-                UnorderedInterval::DOUBLY_DIMINISHED_ELEVENTH.ascending()
-            ),
-            "+dd11"
-        );
-
-        assert_eq!(
-            format!("{:#}", UnorderedInterval::AUGMENTED_UNISON.ascending()),
+            format!("{:#}", UnorderedInterval::A1.ascending()),
             "ascending augmented unison"
         );
 
         assert_eq!(
-            format!("{:#}", UnorderedInterval::PERFECT_OCTAVE.ascending()),
+            format!("{:#}", UnorderedInterval::P8.ascending()),
             "ascending perfect octave"
         );
 
         assert_eq!(
-            format!("{:#}", UnorderedInterval::AUGMENTED_OCTAVE.ascending()),
+            format!("{:#}", UnorderedInterval::A8.ascending()),
             "ascending augmented octave"
         );
 
         assert_eq!(
-            format!(
-                "{:#}",
-                UnorderedInterval::PERFECT_DOUBLE_OCTAVE.descending()
-            ),
+            format!("{:#}", UnorderedInterval::P15.descending()),
             "descending perfect double octave"
         );
 
@@ -1816,7 +1753,7 @@ mod tests {
                 "{:#}",
                 UnorderedInterval {
                     octaves: 3,
-                    simple: UnorderedSimpleInterval::DIMINISHED_UNISON
+                    simple: UnorderedSimpleInterval::d1
                 }
                 .ascending()
             ),
@@ -1824,30 +1761,24 @@ mod tests {
         );
 
         assert_eq!(
-            format!("{:#}", UnorderedInterval::MAJOR_THIRD.descending()),
+            format!("{:#}", UnorderedInterval::M3.descending()),
             "descending major third"
         );
 
         assert_eq!(
-            format!("{:#}", UnorderedInterval::MINOR_NINTH.descending()),
+            format!("{:#}", UnorderedInterval::m9.descending()),
             "descending minor ninth"
         );
 
         assert_eq!(
-            format!(
-                "{:#}",
-                UnorderedInterval::DOUBLY_AUGMENTED_FIFTH.ascending()
-            ),
+            format!("{:#}", UnorderedInterval::AA5.ascending()),
             "ascending doubly augmented fifth"
         );
 
         assert_eq!(
             format!(
                 "{:#}",
-                UnorderedInterval::DOUBLY_DIMINISHED_SECOND
-                    .diminish()
-                    .diminish()
-                    .descending()
+                UnorderedInterval::dd2.diminish().diminish().descending()
             ),
             "descending 4x diminished second"
         );
@@ -1856,38 +1787,38 @@ mod tests {
     #[quickcheck]
     fn ordered_interval_enharmonic_examples() {
         assert_enharmonic!(
-            UnorderedInterval::PERFECT_UNISON.ascending(),
-            UnorderedInterval::PERFECT_UNISON.ascending()
+            UnorderedInterval::P1.ascending(),
+            UnorderedInterval::P1.ascending()
         );
 
         assert_enharmonic!(
-            UnorderedInterval::AUGMENTED_THIRD.ascending(),
-            UnorderedInterval::PERFECT_FOURTH.ascending()
+            UnorderedInterval::A3.ascending(),
+            UnorderedInterval::P4.ascending()
         );
 
         assert_enharmonic!(
-            UnorderedInterval::DOUBLY_DIMINISHED_SECOND.ascending(),
-            UnorderedInterval::MINOR_SECOND.descending()
+            UnorderedInterval::dd2.ascending(),
+            UnorderedInterval::m2.descending()
         );
 
         assert_enharmonic!(
-            UnorderedInterval::AUGMENTED_FOURTH.descending(),
-            UnorderedInterval::DIMINISHED_FIFTH.descending()
+            UnorderedInterval::A4.descending(),
+            UnorderedInterval::d5.descending()
         );
 
         assert_enharmonic!(
-            UnorderedInterval::DOUBLY_AUGMENTED_SEVENTH.ascending(),
-            UnorderedInterval::AUGMENTED_OCTAVE.ascending()
+            UnorderedInterval::AA7.ascending(),
+            UnorderedInterval::A8.ascending()
         );
 
         assert_not_enharmonic!(
-            UnorderedInterval::PERFECT_UNISON.ascending(),
-            UnorderedInterval::PERFECT_OCTAVE.ascending()
+            UnorderedInterval::P1.ascending(),
+            UnorderedInterval::P8.ascending()
         );
 
         assert_not_enharmonic!(
-            UnorderedInterval::MAJOR_THIRD.ascending(),
-            UnorderedInterval::MAJOR_THIRD.descending()
+            UnorderedInterval::M3.ascending(),
+            UnorderedInterval::M3.descending()
         );
     }
 
@@ -1950,45 +1881,21 @@ mod tests {
 
     #[test]
     fn pitch_add_ordered_pitch_interval_examples() {
-        assert_eq!(
-            Pitch::C4 + UnorderedInterval::MAJOR_THIRD.ascending(),
-            Pitch::E4
-        );
+        assert_eq!(Pitch::C4 + UnorderedInterval::M3.ascending(), Pitch::E4);
 
-        assert_eq!(
-            Pitch::C4 + UnorderedInterval::MINOR_SECOND.ascending(),
-            Pitch::Db4
-        );
+        assert_eq!(Pitch::C4 + UnorderedInterval::m2.ascending(), Pitch::Db4);
 
-        assert_eq!(
-            Pitch::E4 + UnorderedInterval::MINOR_SECOND.ascending(),
-            Pitch::F4
-        );
+        assert_eq!(Pitch::E4 + UnorderedInterval::m2.ascending(), Pitch::F4);
 
-        assert_eq!(
-            Pitch::A4 + UnorderedInterval::MINOR_THIRD.ascending(),
-            Pitch::C5
-        );
+        assert_eq!(Pitch::A4 + UnorderedInterval::m3.ascending(), Pitch::C5);
 
-        assert_eq!(
-            Pitch::G2 + UnorderedInterval::AUGMENTED_TWELFTH.ascending(),
-            Pitch::Ds4
-        );
+        assert_eq!(Pitch::G2 + UnorderedInterval::A12.ascending(), Pitch::Ds4);
 
-        assert_eq!(
-            Pitch::C3 + UnorderedInterval::MAJOR_SECOND.descending(),
-            Pitch::Bb2
-        );
+        assert_eq!(Pitch::C3 + UnorderedInterval::M2.descending(), Pitch::Bb2);
 
-        assert_eq!(
-            Pitch::E6 + UnorderedInterval::MAJOR_THIRD.descending(),
-            Pitch::C6
-        );
+        assert_eq!(Pitch::E6 + UnorderedInterval::M3.descending(), Pitch::C6);
 
-        assert_eq!(
-            Pitch::Fb3 + UnorderedInterval::DOUBLY_DIMINISHED_NINTH.descending(),
-            Pitch::Es2
-        );
+        assert_eq!(Pitch::Fb3 + UnorderedInterval::dd9.descending(), Pitch::Es2);
     }
 
     #[quickcheck]
@@ -1997,7 +1904,7 @@ mod tests {
     }
 
     #[quickcheck]
-    fn pitch_sub_ordered_interval_equals_add_neg(pitch: Pitch, interval: OrderedInterval) {
+    fn pitch_sub_ordered_interval_equals_addneg(pitch: Pitch, interval: OrderedInterval) {
         assert_eq!(pitch - interval, pitch + (-interval));
     }
 
@@ -2009,35 +1916,26 @@ mod tests {
 
     #[quickcheck]
     fn pitch_add_unison(pitch: Pitch) {
-        assert_eq!(pitch + UnorderedInterval::PERFECT_UNISON, pitch);
-        assert_eq!(pitch + UnorderedInterval::PERFECT_UNISON.ascending(), pitch);
-        assert_eq!(
-            pitch + UnorderedInterval::PERFECT_UNISON.descending(),
-            pitch
-        );
+        assert_eq!(pitch + UnorderedInterval::P1, pitch);
+        assert_eq!(pitch + UnorderedInterval::P1.ascending(), pitch);
+        assert_eq!(pitch + UnorderedInterval::P1.descending(), pitch);
     }
 
     #[quickcheck]
     fn pitch_sub_unison(pitch: Pitch) {
-        assert_eq!(pitch - UnorderedInterval::PERFECT_UNISON, pitch);
-        assert_eq!(pitch - UnorderedInterval::PERFECT_UNISON.ascending(), pitch);
-        assert_eq!(
-            pitch - UnorderedInterval::PERFECT_UNISON.descending(),
-            pitch
-        );
+        assert_eq!(pitch - UnorderedInterval::P1, pitch);
+        assert_eq!(pitch - UnorderedInterval::P1.ascending(), pitch);
+        assert_eq!(pitch - UnorderedInterval::P1.descending(), pitch);
     }
 
     #[quickcheck]
-    fn pitch_add_octave(pitch: Pitch) {
-        assert_eq!(pitch + UnorderedInterval::PERFECT_OCTAVE, pitch.octave_up());
+    fn pitch_addoctave(pitch: Pitch) {
+        assert_eq!(pitch + UnorderedInterval::P8, pitch.octave_up());
     }
 
     #[quickcheck]
     fn pitch_sub_octave(pitch: Pitch) {
-        assert_eq!(
-            pitch - UnorderedInterval::PERFECT_OCTAVE,
-            pitch.octave_down()
-        );
+        assert_eq!(pitch - UnorderedInterval::P8, pitch.octave_down());
     }
 
     #[quickcheck]
@@ -2072,31 +1970,31 @@ mod tests {
     #[test]
     fn add_unordered_interval_examples() {
         assert_eq!(
-            UnorderedInterval::MAJOR_THIRD + UnorderedInterval::MINOR_THIRD,
-            UnorderedInterval::PERFECT_FIFTH
+            UnorderedInterval::M3 + UnorderedInterval::m3,
+            UnorderedInterval::P5
         );
 
         assert_eq!(
-            UnorderedInterval::PERFECT_FIFTH + UnorderedInterval::PERFECT_FOURTH,
-            UnorderedInterval::PERFECT_OCTAVE
+            UnorderedInterval::P5 + UnorderedInterval::P4,
+            UnorderedInterval::P8
         );
 
         assert_eq!(
-            UnorderedInterval::DIMINISHED_SIXTH + UnorderedInterval::DOUBLY_AUGMENTED_FIFTH,
-            UnorderedInterval::MAJOR_TENTH
+            UnorderedInterval::d6 + UnorderedInterval::AA5,
+            UnorderedInterval::M10
         );
     }
 
     #[test]
     fn sub_unordered_interval_examples() {
         assert_eq!(
-            UnorderedInterval::PERFECT_FIFTH - UnorderedInterval::MINOR_THIRD,
-            UnorderedInterval::MAJOR_THIRD
+            UnorderedInterval::P5 - UnorderedInterval::m3,
+            UnorderedInterval::M3
         );
 
         assert_eq!(
-            UnorderedInterval::PERFECT_UNISON - UnorderedInterval::AUGMENTED_UNISON,
-            UnorderedInterval::DIMINISHED_UNISON
+            UnorderedInterval::P1 - UnorderedInterval::A1,
+            UnorderedInterval::d1
         );
     }
 
@@ -2163,14 +2061,14 @@ mod tests {
     }
 
     #[quickcheck]
-    fn unordered_interval_add_unison(interval: UnorderedInterval) {
-        assert_eq!(interval + UnorderedInterval::PERFECT_UNISON, interval);
+    fn unordered_interval_addunison(interval: UnorderedInterval) {
+        assert_eq!(interval + UnorderedInterval::P1, interval);
     }
 
     #[quickcheck]
-    fn unordered_interval_add_octave(interval: UnorderedInterval) {
+    fn unordered_interval_addoctave(interval: UnorderedInterval) {
         assert_eq!(
-            interval + UnorderedInterval::PERFECT_OCTAVE,
+            interval + UnorderedInterval::P8,
             UnorderedInterval {
                 octaves: interval.octaves + 1,
                 ..interval
@@ -2179,7 +2077,7 @@ mod tests {
     }
 
     #[quickcheck]
-    fn add_and_sub_unordered_interval_are_inverses(a: UnorderedInterval, b: UnorderedInterval) {
+    fn addand_sub_unordered_interval_are_inverses(a: UnorderedInterval, b: UnorderedInterval) {
         assert_eq!((a + b) - b, a);
 
         if let Ok(sub) = a.checked_sub(b) {
@@ -2198,65 +2096,57 @@ mod tests {
 
     #[quickcheck]
     fn unordered_interval_sub_self(interval: UnorderedInterval) {
-        assert_eq!(interval - interval, UnorderedInterval::PERFECT_UNISON);
+        assert_eq!(interval - interval, UnorderedInterval::P1);
     }
 
     #[test]
     fn add_ordered_interval_examples() {
         assert_eq!(
-            UnorderedInterval::MAJOR_THIRD.ascending() + UnorderedInterval::MINOR_THIRD.ascending(),
-            UnorderedInterval::PERFECT_FIFTH.ascending()
+            UnorderedInterval::M3.ascending() + UnorderedInterval::m3.ascending(),
+            UnorderedInterval::P5.ascending()
         );
 
         assert_eq!(
-            UnorderedInterval::PERFECT_FIFTH.ascending()
-                + UnorderedInterval::PERFECT_FOURTH.ascending(),
-            UnorderedInterval::PERFECT_OCTAVE.ascending()
+            UnorderedInterval::P5.ascending() + UnorderedInterval::P4.ascending(),
+            UnorderedInterval::P8.ascending()
         );
 
         assert_eq!(
-            UnorderedInterval::MAJOR_NINTH.descending()
-                + UnorderedInterval::AUGMENTED_SIXTH.descending(),
-            UnorderedInterval::AUGMENTED_FOURTEENTH.descending()
+            UnorderedInterval::M9.descending() + UnorderedInterval::A6.descending(),
+            UnorderedInterval::A14.descending()
         );
 
         assert_eq!(
-            UnorderedInterval::MAJOR_NINTH.ascending()
-                + UnorderedInterval::DIMINISHED_THIRD.descending(),
-            UnorderedInterval::AUGMENTED_SEVENTH.ascending()
+            UnorderedInterval::M9.ascending() + UnorderedInterval::d3.descending(),
+            UnorderedInterval::A7.ascending()
         );
 
         assert_eq!(
-            UnorderedInterval::MAJOR_SECOND.ascending()
-                + UnorderedInterval::DIMINISHED_THIRD.descending(),
-            UnorderedInterval::DIMINISHED_SECOND.descending()
+            UnorderedInterval::M2.ascending() + UnorderedInterval::d3.descending(),
+            UnorderedInterval::d2.descending()
         );
 
         assert_eq!(
-            UnorderedInterval::PERFECT_FOURTH.descending()
-                + UnorderedInterval::MAJOR_SECOND.ascending(),
-            UnorderedInterval::MINOR_THIRD.descending()
+            UnorderedInterval::P4.descending() + UnorderedInterval::M2.ascending(),
+            UnorderedInterval::m3.descending()
         );
 
         assert_eq!(
-            UnorderedInterval::PERFECT_OCTAVE.descending()
-                + UnorderedInterval::PERFECT_DOUBLE_OCTAVE.ascending(),
-            UnorderedInterval::PERFECT_OCTAVE.ascending()
+            UnorderedInterval::P8.descending() + UnorderedInterval::P15.ascending(),
+            UnorderedInterval::P8.ascending()
         );
     }
 
     #[test]
     fn sub_ordered_interval_examples() {
         assert_eq!(
-            UnorderedInterval::PERFECT_FIFTH.ascending()
-                - UnorderedInterval::MINOR_THIRD.ascending(),
-            UnorderedInterval::MAJOR_THIRD.ascending()
+            UnorderedInterval::P5.ascending() - UnorderedInterval::m3.ascending(),
+            UnorderedInterval::M3.ascending()
         );
 
         assert_eq!(
-            UnorderedInterval::PERFECT_UNISON.ascending()
-                - UnorderedInterval::AUGMENTED_UNISON.ascending(),
-            UnorderedInterval::DIMINISHED_UNISON.ascending()
+            UnorderedInterval::P1.ascending() - UnorderedInterval::A1.ascending(),
+            UnorderedInterval::d1.ascending()
         );
     }
 
@@ -2321,13 +2211,13 @@ mod tests {
     }
 
     #[quickcheck]
-    fn add_and_sub_ordered_interval_are_inverses(a: OrderedInterval, b: OrderedInterval) {
+    fn addand_sub_ordered_interval_are_inverses(a: OrderedInterval, b: OrderedInterval) {
         assert_eq!((a + b) - b, a);
         assert_eq!((a - b) + b, a);
     }
 
     #[quickcheck]
-    fn add_and_sub_ordered_interval_ascending_descending(a: OrderedInterval, b: UnorderedInterval) {
+    fn addand_sub_ordered_interval_ascending_descending(a: OrderedInterval, b: UnorderedInterval) {
         assert_eq!(a + b.ascending(), a - b.descending());
         assert_eq!(a + b.descending(), a - b.ascending());
     }
@@ -2341,12 +2231,12 @@ mod tests {
     fn unordered_simple_interval_invert(interval: UnorderedSimpleInterval) {
         assert_eq!(
             interval.wrapping_add(interval.invert()),
-            UnorderedSimpleInterval::PERFECT_UNISON
+            UnorderedSimpleInterval::P1
         );
 
         assert_eq!(
             interval.invert(),
-            UnorderedSimpleInterval::PERFECT_UNISON.wrapping_sub(interval)
+            UnorderedSimpleInterval::P1.wrapping_sub(interval)
         );
     }
 
